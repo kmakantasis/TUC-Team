@@ -73,7 +73,7 @@ def SplitImage(img, silence=True):
     return r,g,b
 
 
-def Disc_Detect(img2,template,silent=False):
+def Disc_Detect(img2,disc_type,silent=False):
 
     '''
     Last Maintenance: Antonis
@@ -99,44 +99,60 @@ def Disc_Detect(img2,template,silent=False):
     #w, h = template.shape[::-1]
     
     #theight, twidth, tdepth = template.shape() 
+
+    if disc_type =='DARK':
+        template = cv2.imread('./ImageProcessing/fovea_template.jpg',0)
+        disc_size=200
+        #template = cv2.resize(template, (200, 200) )
+
+    elif disc_type =='WHITE':
+        template = cv2.imread('./ImageProcessing/disc_template.jpg',0)
+        disc_size=240
+        #template = cv2.resize(template, (250, 250) )
+    else:
+        print("ERROR invalid disc type")
     
-    template = cv2.resize(template, (220, 220) ) 
+    scales=[0.8, 1, 1.2]
     
-    w, h = template.shape[::-1]
-    methods = ["cv2.TM_CCOEFF_NORMED"]
+    
+    methods = ['cv2.TM_CCOEFF_NORMED'] #'cv2.TM_CCOEFF_NORMED',
    # Different methods to choose from
    # , 'cv2.TM_CCORR', 'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
    # methods = ['cv2.TM_SQDIFF_NORMED','cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF']
     for meth in methods:
-        img = img2.copy()
-        method = eval(meth)
-    
-        # Apply template Matching
-        res = cv2.matchTemplate(img,template,method)
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    
-        # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
-        if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
-            top_left = min_loc
-        else:
-            top_left = max_loc
-        bottom_right = (top_left[0] + w, top_left[1] + h)
+        for sc in scales:
+            template = cv2.resize(template, ( int(sc*disc_size), int(sc*disc_size) ) )
+            
+            w, h = template.shape[::-1]
+            img = img2.copy()
+            method = eval(meth)
         
-        center_x= (bottom_right[0]+top_left[0])/2
-        center_y= (bottom_right[1]+top_left[1])/2
-        if silent==False:
-            cv2.rectangle(img,top_left, bottom_right, 0, 14)
-            cv2.circle(img,(int(center_x),int(center_y)),10,(255,255,255),-11) 
-
-            plt.subplot(121),plt.imshow(res,cmap = 'gray')
-            plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
-            plt.subplot(122),plt.imshow(img,cmap = 'gray')
-            plt.title('Detected Point'), plt.xticks([]), plt.yticks([])             
-            plt.show()   
-            print ("Disc x=%d , y=%d ")  %(center_x,center_y)
+            # Apply template Matching
+            res = cv2.matchTemplate(img,template,method)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+        
+            # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+            if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+                top_left = min_loc
+            else:
+                top_left = max_loc
+            bottom_right = (top_left[0] + w, top_left[1] + h)
             
-            
-        return  center_x, center_y 
+            center_x= (bottom_right[0]+top_left[0])/2
+            center_y= (bottom_right[1]+top_left[1])/2
+            if silent==False:
+                cv2.rectangle(img,top_left, bottom_right, 0, 14)
+                cv2.circle(img,(int(center_x),int(center_y)),10,(255,255,255),-11) 
+    
+                plt.subplot(121),plt.imshow(res,cmap = 'gray')
+                plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
+                plt.subplot(122),plt.imshow(img,cmap = 'gray')
+                plt.title('Detected Point'), plt.xticks([]), plt.yticks([])             
+                plt.show()   
+                print ("Disc x=%d , y=%d ")  %(center_x,center_y)
+                
+                
+            return  center_x, center_y 
     
 
 def Rotation_Correct(r,g, LR_check, silent=False):
@@ -156,14 +172,14 @@ def Rotation_Correct(r,g, LR_check, silent=False):
             :rtype: img - two dimensional numpy array corresponding to rotation corrected image. 
     '''   
     #discs are detected
-    disc_template = cv2.imread('./ImageProcessing/disc_template.jpg',0) 
-    x1, y1 = Disc_Detect(r,disc_template)
+   
+    x1, y1 = Disc_Detect(r,'WHITE')
     
-    disc_template2 = cv2.imread('./ImageProcessing/disc_template2.jpg',0) 
-    xx1, yy1 = Disc_Detect(r,disc_template2)    
+  #  disc_template2 = cv2.imread('./ImageProcessing/disc_template2.jpg',0) 
+  #  xx1, yy1 = Disc_Detect(r,disc_template2)    
     
-    fovea_template = cv2.imread('./ImageProcessing/fovea_template.jpg',0) 
-    x2, y2 = Disc_Detect(g,fovea_template)
+
+    x2, y2 = Disc_Detect(g,'DARK')
     
         
     # --------Check if image is mirrored -----
