@@ -2,9 +2,8 @@
 import numpy as np
 from scipy import ndimage
 import matplotlib.pyplot as plt
+import math
 import cv2
-
-
 
 def ImageRescale(im_r):   
     height, width, depth = im_r.shape
@@ -72,7 +71,99 @@ def SplitImage(img, silence=True):
         plt.show()
 
     return r,g,b
+
+
+def Disc_Detect(img2,template,silent=False):
+
+    #Antonis
     
+    # All the 6 methods for comparison in a list
+    #template = array(Image.open( 'disc_template.jpg' ).convert("L"))
+ 
+    #w, h = template.shape[::-1]
+    
+    #theight, twidth, tdepth = template.shape() 
+    
+    template = cv2.resize(template, (180, 180) ) 
+    
+    w, h = template.shape[::-1]
+    methods = ["cv2.TM_CCOEFF_NORMED"]
+   # Different methods to choose from
+   # , 'cv2.TM_CCORR', 'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
+   # methods = ['cv2.TM_SQDIFF_NORMED','cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF']
+    for meth in methods:
+        img = img2.copy()
+        method = eval(meth)
+    
+        # Apply template Matching
+        res = cv2.matchTemplate(img,template,method)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    
+        # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+        if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+            top_left = min_loc
+        else:
+            top_left = max_loc
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+        
+        center_x= (bottom_right[0]+top_left[0])/2
+        center_y= (bottom_right[1]+top_left[1])/2
+        if silent==False:
+            cv2.rectangle(img,top_left, bottom_right, 0, 14)
+            cv2.circle(img,(int(center_x),int(center_y)),10,(255,255,255),-11) 
+
+            plt.subplot(121),plt.imshow(res,cmap = 'gray')
+            plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
+            plt.subplot(122),plt.imshow(img,cmap = 'gray')
+            plt.title('Detected Point'), plt.xticks([]), plt.yticks([])             
+            plt.show()   
+            print ("Disc x=%d , y=%d ")  %(center_x,center_y)
+            
+            
+        return  center_x, center_y 
+    
+
+def Rotation_Correct(r,g):
+    '''
+    Function definition
+    +++++++++++++++++++
+            
+        .. py:function:: Rotation_Correct(red_channel, green_channel)
+
+            Apply gamma correction on input image.
+            
+            :param string img: RGB image to be splitted.
+            :param float correction: gamma value.
+               
+            :rtype: img - two dimensional numpy array corresponding to gamma corrected image. 
+    '''   
+
+    disc_template = cv2.imread('disc_template.jpg',0) 
+    x1, y1 = Disc_Detect(r,disc_template)
+    
+    fovea_template = cv2.imread('fovea_template.jpg',0) 
+    x2, y2 = Disc_Detect(g,fovea_template)
+    
+    dx= abs(x1-x2)
+    dy= abs(y1-y2)
+    
+    print ("Disc1 x=%d , y=%d ")  %(x1,y1)
+    
+    rads = math.atan2(dy,dx)
+    degs = math.degrees(rads)
+    
+    print ("Fovea-Optic Disc Angle=%2.4f )" %degs)
+    
+    rows,cols = g.shape
+    
+    M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1)
+    rot_g = cv2.warpAffine(g,M,(cols,rows))
+    plt.imshow(rot_g,cmap = 'gray')
+    plt.title('Rotation correct'), plt.xticks([]), plt.yticks([])
+    plt.show()
+    return(rot_g)  #return green channel rotated
+
+
 
 def GammaCorrection(img, correction):
     """            
