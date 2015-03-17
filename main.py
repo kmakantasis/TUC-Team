@@ -8,7 +8,6 @@ import cv2
 import ImageProcessing
 import LoadData
 
-
 names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[500, 500])
 for i in range(labels.shape[0]):
     if labels[i] == 4:
@@ -32,4 +31,3 @@ for name in names:
 
     out_name = '../data/input/%s.jpg'%name
     ret = cv2.imwrite(out_name, res)
-
