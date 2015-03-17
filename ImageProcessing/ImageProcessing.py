@@ -75,6 +75,22 @@ def SplitImage(img, silence=True):
 
 def Disc_Detect(img2,template,silent=False):
 
+    '''
+    Last Maintenance: Antonis
+    
+    Function definition
+    +++++++++++++++++++
+            
+        .. py:function:: Disc_Detect(image_channel, template)
+
+            Detects circular discs on input image.
+            
+            :param uint image_channel:  
+                           
+            :rtype: center_x, 
+            :rtype: center_y, 
+    ''' 
+    
     #Antonis
     
     # All the 6 methods for comparison in a list
@@ -124,7 +140,9 @@ def Disc_Detect(img2,template,silent=False):
     
 
 def Rotation_Correct(r,g):
+    
     '''
+    Last Maintenance: Antonis
     Function definition
     +++++++++++++++++++
             
@@ -162,7 +180,6 @@ def Rotation_Correct(r,g):
     plt.title('Rotation correct'), plt.xticks([]), plt.yticks([])
     plt.show()
     return(rot_g)  #return green channel rotated
-
 
 
 def GammaCorrection(img, correction):
