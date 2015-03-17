@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+#auto path loading in order to run easily from terminal
+import sys
+sys.path.append('./ImageProcessing')
+sys.path.append('./DataCreation')
 import cv2
 
 import ImageProcessing
