@@ -132,10 +132,10 @@ def Rotation_Correct(r,g):
 
             Apply gamma correction on input image.
             
-            :param string img: RGB image to be splitted.
-            :param float correction: gamma value.
+            :param uint red_channel:  
+            :param uint green_channel:  
                
-            :rtype: img - two dimensional numpy array corresponding to gamma corrected image. 
+            :rtype: img - two dimensional numpy array corresponding to rotated corrected image. 
     '''   
 
     disc_template = cv2.imread('disc_template.jpg',0) 
