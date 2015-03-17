@@ -139,7 +139,7 @@ def Disc_Detect(img2,template,silent=False):
         return  center_x, center_y 
     
 
-def Rotation_Correct(r,g):
+def Rotation_Correct(r,g, silent=False):
     
     '''
     Last Maintenance: Antonis
@@ -156,10 +156,10 @@ def Rotation_Correct(r,g):
             :rtype: img - two dimensional numpy array corresponding to rotation corrected image. 
     '''   
 
-    disc_template = cv2.imread('disc_template.jpg',0) 
+    disc_template = cv2.imread('./ImageProcessing/disc_template.jpg',0) 
     x1, y1 = Disc_Detect(r,disc_template)
     
-    fovea_template = cv2.imread('fovea_template.jpg',0) 
+    fovea_template = cv2.imread('./ImageProcessing/fovea_template.jpg',0) 
     x2, y2 = Disc_Detect(g,fovea_template)
     
     dx= abs(x1-x2)
@@ -174,7 +174,7 @@ def Rotation_Correct(r,g):
     
     rows,cols = g.shape
     
-    M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1)
+    M = cv2.getRotationMatrix2D((cols/2,rows/2),-degs,1)
     rot_g = cv2.warpAffine(g,M,(cols,rows))
     plt.imshow(rot_g,cmap = 'gray')
     plt.title('Rotation correct'), plt.xticks([]), plt.yticks([])

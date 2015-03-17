@@ -14,7 +14,7 @@ for i in range(labels.shape[0]):
     if labels[i] == 4:
         labels[i] = 1
 counter = 1
-for name in names: 
+for name in names[:1]: 
     
     print 'Processing image %d'%counter    
     counter = counter + 1
@@ -26,6 +26,8 @@ for name in names:
 
     features, mask2 = ImageProcessing.DetectHE(g, silence=True)
     
+    ImageProcessing.Rotation_Correct(r,g, silent=False)
+
     cropped_image = ImageProcessing.CropImage(g, features, silence=True)
 
     res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
