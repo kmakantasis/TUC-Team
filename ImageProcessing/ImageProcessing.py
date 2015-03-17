@@ -153,7 +153,7 @@ def Rotation_Correct(r,g):
             :param uint red_channel:  
             :param uint green_channel:  
                
-            :rtype: img - two dimensional numpy array corresponding to rotated corrected image. 
+            :rtype: img - two dimensional numpy array corresponding to rotation corrected image. 
     '''   
 
     disc_template = cv2.imread('disc_template.jpg',0) 
