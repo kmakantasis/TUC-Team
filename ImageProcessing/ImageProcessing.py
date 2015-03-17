@@ -139,7 +139,7 @@ def Disc_Detect(img2,template,silent=False):
         return  center_x, center_y 
     
 
-def Rotation_Correct(r,g, silent=False):
+def Rotation_Correct(r,g, LR_check, silent=False):
     
     '''
     Last Maintenance: Antonis
@@ -155,30 +155,69 @@ def Rotation_Correct(r,g, silent=False):
                
             :rtype: img - two dimensional numpy array corresponding to rotation corrected image. 
     '''   
-
+    #discs are detected
     disc_template = cv2.imread('./ImageProcessing/disc_template.jpg',0) 
     x1, y1 = Disc_Detect(r,disc_template)
     
     fovea_template = cv2.imread('./ImageProcessing/fovea_template.jpg',0) 
     x2, y2 = Disc_Detect(g,fovea_template)
     
+        
+    # --------Check if image is mirrored -----
+    # we consider normal images those have a notch 
+    #  on the side of the image (square, triangle, or circle) 
+    
+    plt.imshow(g,cmap = 'gray')
+    plt.title('Rotation correct input image'), plt.xticks([]), plt.yticks([])
+    plt.show()
+    
+    if LR_check=='right':
+        if x1-x2>0:
+            INV=0 #'not_inverted'
+        else:
+            INV=1 #'inverted'
+            
+    if LR_check=='left':
+        if x1-x2>0:
+            INV=1 #'inverted'
+        else:
+            INV=0 #'not_inverted'
+            
+    if INV==1:
+        g=cv2.flip(g, 1)
+        print("Flip detected") 
+        
+        plt.imshow(g,cmap = 'gray')
+        plt.title('Green flipped image'), plt.xticks([]), plt.yticks([])
+        plt.show()
+    else:
+         print("Flip NOT detected") 
+        
+            
+    #------ end Check if image is mirrored 
+    
     dx= abs(x1-x2)
     dy= abs(y1-y2)
-    
-    print ("Disc1 x=%d , y=%d ")  %(x1,y1)
-    
+        
     rads = math.atan2(dy,dx)
     degs = math.degrees(rads)
     
+    print ("Disc1 x=%d , y=%d ")  %(x1,y1)
     print ("Fovea-Optic Disc Angle=%2.4f )" %degs)
     
     rows,cols = g.shape
-    
-    M = cv2.getRotationMatrix2D((cols/2,rows/2),-degs,1)
-    rot_g = cv2.warpAffine(g,M,(cols,rows))
-    plt.imshow(rot_g,cmap = 'gray')
-    plt.title('Rotation correct'), plt.xticks([]), plt.yticks([])
-    plt.show()
+    if abs(degs)<15:
+        M = cv2.getRotationMatrix2D((cols/2,rows/2),-degs,1)
+        rot_g = cv2.warpAffine(g,M,(cols,rows))
+   
+        plt.imshow(rot_g,cmap = 'gray')
+        plt.title('Rotation correct'), plt.xticks([]), plt.yticks([])
+        plt.show()
+        
+    else:
+        print("Large angle detected. Probably an error prefer not to flip")
+        rot_g=g
+        
     return(rot_g)  #return green channel rotated
 
 
