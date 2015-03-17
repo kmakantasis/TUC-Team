@@ -9,12 +9,12 @@ import ImageProcessing
 import LoadData
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='CSV/trainLabels.csv', number_of_data=[500, 500])
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[500, 500])
 for i in range(labels.shape[0]):
     if labels[i] == 4:
         labels[i] = 1
 counter = 1
-for name in names: 
+for name in names[:1]: 
     
     print 'Processing image %d'%counter    
     counter = counter + 1
@@ -24,7 +24,7 @@ for name in names:
 
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
 
-    features, mask2 = ImageProcessing.DetectHE(g, silence=True)
+    features, mask2 = ImageProcessing.DetectHE(g, silence=False)
 
     cropped_image = ImageProcessing.CropImage(g, features, silence=True)
 
