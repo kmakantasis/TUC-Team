@@ -100,7 +100,7 @@ def Disc_Detect(img2,template,silent=False):
     
     #theight, twidth, tdepth = template.shape() 
     
-    template = cv2.resize(template, (180, 180) ) 
+    template = cv2.resize(template, (220, 220) ) 
     
     w, h = template.shape[::-1]
     methods = ["cv2.TM_CCOEFF_NORMED"]
@@ -158,6 +158,9 @@ def Rotation_Correct(r,g, LR_check, silent=False):
     #discs are detected
     disc_template = cv2.imread('./ImageProcessing/disc_template.jpg',0) 
     x1, y1 = Disc_Detect(r,disc_template)
+    
+    disc_template2 = cv2.imread('./ImageProcessing/disc_template2.jpg',0) 
+    xx1, yy1 = Disc_Detect(r,disc_template2)    
     
     fovea_template = cv2.imread('./ImageProcessing/fovea_template.jpg',0) 
     x2, y2 = Disc_Detect(g,fovea_template)
