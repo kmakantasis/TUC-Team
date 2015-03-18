@@ -509,7 +509,8 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
     
 def DetectHE(img, silence=True):
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
-    print ("Hist[0]=%3.3f" %hist[0])
+    if silence==False:  
+        print ("Hist[0]=%3.3f" %hist[0])
 
     if (hist[0]<500000):
         gamma= abs(550000-hist[0])/200000. +1
@@ -518,8 +519,9 @@ def DetectHE(img, silence=True):
         gamma=1
     
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
-    print ("After Gamma=%2.2f Hist[0]=%3.3f" %(gamma,hist[0]) )  
-    print ("channel mean=%3.3f" %np.mean(img))
+    if silence==False:  
+        print ("After Gamma=%2.2f Hist[0]=%3.3f" %(gamma,hist[0]) )  
+        print ("channel mean=%3.3f" %np.mean(img))
     
     dilate, closing, opening = BasicMorphology(img, DIL=5, CLO=4, silence=silence)
             

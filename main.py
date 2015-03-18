@@ -26,7 +26,7 @@ for name in names:
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
     
     #----Antonis new stuff: Flip and Rotation Correct -------    
-    g_flip_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=False)    
+    g_flip_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)    
     g=g_flip_rotated
     #----end Antonis new stuff ---
 
