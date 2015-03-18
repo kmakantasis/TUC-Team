@@ -97,26 +97,26 @@ def Disc_Detect(img2,disc_type,silence=False):
     Function definition
     +++++++++++++++++++
             
-        .. py:function:: Disc_Detect(image_channel, template)
+        .. py:function:: Disc_Detect(image_channel, disc_type)
 
-            Detects circular discs on input image.
+            Detects circular discs, DARK or WHITE on input image. Utilizes majority vote on various scales
             
-            :param uint image_channel:  
-                           
-            :rtype: center_x, 
-            :rtype: center_y, 
+            :param uint image_channel:Input grayscale channe 
+            :param string disc_type: 'DARK' or 'WHITE' to increase robustnes                        
+            :rtype: Returns center_x of detected disc 
+            :rtype: Returns center_y of detected disc 
     ''' 
     
 
     if disc_type =='DARK':
         template = cv2.imread('./ImageProcessing/fovea_template.jpg',0)
-        disc_size=170
-        #template = cv2.resize(template, (200, 200) )
+        disc_size=170 #initial scale
+ 
 
     elif disc_type =='WHITE':
         template = cv2.imread('./ImageProcessing/disc_template.jpg',0)
-        disc_size=230
-        #template = cv2.resize(template, (250, 250) )
+        disc_size=230  #initial scale
+ 
     else:
         print("ERROR invalid disc type")
     
@@ -183,13 +183,21 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
 
             Apply  Flip and Rotation correction on input image.
             
-            :param uint8 red_channel:  
-            :param uint8 green_channel:
-            :param string LR_check: f
+            :param uint8 red_channel:  Need red for white disc detection
+            :param uint8 green_channel:Need green for dark disck
+            :param string LR_check: Need to know if image is left or right
             :param boolean silence: default is True. Set to False to print the result.
                
-            :rtype: uint8 green_img - two dimensional green channel numpy array corresponding to rotation corrected image. 
+            :rtype: uint8 green_img
+                - two dimensional uint green channel numpy array corresponding to rotation corrected image.
+            :rtype: uint tuple white_disc_xy
+                  - coordinates of both discs to link with next masking methods
+            :rtype: uint tuple dark_disc_xy
+              - coordinates of both discs to link with next masking methods
+ 
     '''   
+    
+    g_original=g # Keep original green untouched for rotate or return
     # Basic morphology correction, it could be simplified
 
     g = cv2.blur(g,(10,10))
@@ -216,7 +224,7 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
         print ("Initial dx=%d " %dx)
         
         plt.imshow(g,cmap = 'gray')
-        plt.title('Rotation correct input image'), plt.xticks([]), plt.yticks([])
+        plt.title('Smoothed Input image, before Flip Rotation correction'), plt.xticks([]), plt.yticks([])
         plt.show()   
         
     # Do the left/right checking    
@@ -237,7 +245,7 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
             INV=0 #'not_inverted'
             
     if INV==1:
-        g=cv2.flip(g, 1)       
+        g_original=cv2.flip(g_original, 1)      #Flip is done 
         if silence==False:   
             print("Flip detected") 
             
@@ -274,20 +282,22 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     rows,cols = g.shape
     if abs(degs)<20:
         M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1)
-        rot_g = cv2.warpAffine(g,M,(cols,rows))
+        rot_g = cv2.warpAffine(g_original,M,(cols,rows)) # Rotation is done
         if silence==False:    
             plt.imshow(rot_g,cmap = 'gray')
             plt.title('Rotation correct'), plt.xticks([]), plt.yticks([])
             plt.show()      
     else:
-        rot_g=g
+        rot_g=g_original
         if silence==False:
             print("Large angle detected. Probably an error. Prefer not to rotate")
 
     if silence==False:       
         print ('--->Image L/R: '),(LR_check)
     
-    return(rot_g)  #return green channel rotated
+    white_disc_xy= (x1, y1)
+    dark_disc_xy = (x2,y2)
+    return rot_g, white_disc_xy ,  dark_disc_xy  #return green channel rotated, and coordinates
 
 
 def GammaCorrection(img, correction):

@@ -20,7 +20,7 @@ for name in names[:1]:
     counter = counter + 1
     
     
-    name= '456_left' #'363_right' 
+    #name= '456_left' #'363_right' 
 
     img_name = '../data/resized/%s.jpg'%name
     
@@ -44,7 +44,7 @@ for name in names[:1]:
     #g2=g
     #ret,r = cv2.threshold(r,150,255,cv2.THRESH_BINARY)
     # cv2.equalizeHist( r, r );
-    g_rotated = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)
+    g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=False)
 
 '''
     cropped_image = ImageProcessing.CropImage(g, features, silence=True)

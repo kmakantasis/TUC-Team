@@ -15,13 +15,22 @@ for i in range(labels.shape[0]):
 counter = 1
 for name in names: 
     
-    print 'Processing image %d'%counter    
+    print 'Processing image %d'%counter 
+    print ('Image Name: '),(name)
+    
     counter = counter + 1
     
     img_name = '../data/resized/%s.jpg'%name
     img = ImageProcessing.LoadImage(img_name)
 
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
+    
+    #----Antonis new stuff: Flip and Rotation Correct -------    
+    g_flip_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=False)    
+    g=g_flip_rotated
+    #----end Antonis new stuff ---
+
+    #-->Kostas if you like to bulid the triangular mask use the white_xy and dark_xy cooridnate tuples 
 
     features, mask2 = ImageProcessing.DetectHE(g, silence=True)
     
