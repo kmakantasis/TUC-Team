@@ -89,8 +89,7 @@ def Find_Majority(k):
         return int ( sum(k)/len(k) )
         
     
-    
-def Disc_Detect(img2,disc_type,silent=False):
+def Disc_Detect(img2,disc_type,silence=False):
 
     '''
     Last Maintenance: Antonis
@@ -108,14 +107,6 @@ def Disc_Detect(img2,disc_type,silent=False):
             :rtype: center_y, 
     ''' 
     
-    #Antonis
-    
-    # All the 6 methods for comparison in a list
-    #template = array(Image.open( 'disc_template.jpg' ).convert("L"))
- 
-    #w, h = template.shape[::-1]
-    
-    #theight, twidth, tdepth = template.shape() 
 
     if disc_type =='DARK':
         template = cv2.imread('./ImageProcessing/fovea_template.jpg',0)
@@ -130,8 +121,7 @@ def Disc_Detect(img2,disc_type,silent=False):
         print("ERROR invalid disc type")
     
     scales=[0.85, 0.95 , 1, 1.1 , 1.15]
-    
-    
+      
     methods = ['cv2.TM_CCOEFF_NORMED'] #'cv2.TM_CCOEFF_NORMED',
    # Different methods to choose from
    # , 'cv2.TM_CCORR', 'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
@@ -162,7 +152,7 @@ def Disc_Detect(img2,disc_type,silent=False):
             all_centers.append ([center_x, center_y])
             
             
-            if silent==False:
+            if silence==False:
                 cv2.rectangle(img,top_left, bottom_right, 0, 14)
                 cv2.circle(img,(int(center_x),int(center_y)),10,(255,255,255),-11) 
     
@@ -176,49 +166,60 @@ def Disc_Detect(img2,disc_type,silent=False):
     x_majority = Find_Majority([t[0] for t in all_centers])
     y_majority = Find_Majority([t[1] for t in all_centers])
     
-    print ("Majority Vote Disc x=%d , y=%d ")  %(x_majority,y_majority)                
-    return  center_x, center_y 
+    if silence==False:
+        print ("Majority Vote Disc x=%d , y=%d ")  %(x_majority,y_majority)
+                
+    return x_majority, y_majority 
     
 
-def Rotation_Correct(r,g, LR_check, silent=False):
+def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     
     '''
     Last Maintenance: Antonis
     Function definition
     +++++++++++++++++++
             
-        .. py:function:: Rotation_Correct(red_channel, green_channel)
+        .. py:function:: Rotation_Correct(red_channel, green_channel, silence)
 
-            Apply gamma correction on input image.
+            Apply  Flip and Rotation correction on input image.
             
-            :param uint red_channel:  
-            :param uint green_channel:  
+            :param uint8 red_channel:  
+            :param uint8 green_channel:
+            :param string LR_check: f
+            :param boolean silence: default is True. Set to False to print the result.
                
-            :rtype: img - two dimensional numpy array corresponding to rotation corrected image. 
+            :rtype: uint8 green_img - two dimensional green channel numpy array corresponding to rotation corrected image. 
     '''   
-    #discs are detected
-    w, h = r.shape[::-1]
-    x1, y1 = Disc_Detect(r,'WHITE')
-    
-  #  disc_template2 = cv2.imread('./ImageProcessing/disc_template2.jpg',0) 
-  #  xx1, yy1 = Disc_Detect(r,disc_template2)    
-    
+    # Basic morphology correction, it could be simplified
 
-    x2, y2 = Disc_Detect(g,'DARK')
+    g = cv2.blur(g,(10,10))
+    r = cv2.blur(r,(20,20))
+    g, opening, closing=BasicMorphology(g, DIL=3, CLO=4, silence=True)
+    dilate, opening, r=BasicMorphology(r, DIL=5, CLO=4, silence=True)
     
-        
+    r=GammaCorrection(r,.8)
+    g=GammaCorrection(g,.8)    
+     
+    # Detect the two discs
+    w, h = r.shape[::-1]
+    x1, y1 = Disc_Detect(r,'WHITE',silence=True)
+    x2, y2 = Disc_Detect(g,'DARK',silence=True)
+          
     # --------Check if image is mirrored -----
     # we consider normal images those have a notch 
     #  on the side of the image (square, triangle, or circle) 
-
     
-    plt.imshow(g,cmap = 'gray')
-    plt.title('Rotation correct input image'), plt.xticks([]), plt.yticks([])
-    plt.show()
-    
-    dx= x1-x2
+    dx= x1-x2   
     dy= y1-y2  
     
+    if silence==False:
+        print ("Initial dx=%d " %dx)
+        
+        plt.imshow(g,cmap = 'gray')
+        plt.title('Rotation correct input image'), plt.xticks([]), plt.yticks([])
+        plt.show()   
+        
+    # Do the left/right checking    
     if LR_check=='right':
         if dx>0:
             INV=0 #'not_inverted'
@@ -226,64 +227,66 @@ def Rotation_Correct(r,g, LR_check, silent=False):
             INV=1 #'inverted'
             x1=w-x1
             x2=w-x1
-           
-             
-            
+                                
     if LR_check=='left':
         if dx>0:
             INV=1 #'inverted'
             x1=w-x1
-            x2=w-x1            
-            
-            
+            x2=w-x1                          
         else:
             INV=0 #'not_inverted'
             
     if INV==1:
-        g=cv2.flip(g, 1)
-        print("Flip detected") 
-        
-        plt.imshow(g,cmap = 'gray')
-        plt.title('Green flipped image'), plt.xticks([]), plt.yticks([])
-        plt.show()
+        g=cv2.flip(g, 1)       
+        if silence==False:   
+            print("Flip detected") 
+            
+            plt.imshow(g,cmap = 'gray')
+            plt.title('Green flipped image'), plt.xticks([]), plt.yticks([])
+            plt.show()
     else:
-         print("Flip NOT detected") 
+        if silence==False:   
+            print("Flip NOT detected") 
         
     dx= (x1-x2)
     dy= (y1-y2)            
     #------ end Check if image is mirrored 
-    
-
-        
-    rads = math.atan2(dy,dx) # we are invariant in x direction, i.e it is corrected
-                                # only y will determine the sign of the degrees
+         
+    rads = math.atan2(dy,dx)                                  
     degs = math.degrees(rads)
+
+# refining degrees to be in the first and fourt quadratiles 
     if degs<-120:
-        print ("Over 90 degrees Angle=%2.4f ,normalizing )" %degs)
         degs =180+degs
+        if silence==False:   
+            print ("Over 90 degrees Angle=%2.4f ,normalizing )" %degs)      
         
     if degs>120:
-        print ("Over 90 degrees Angle=%2.4f ,normalizing )" %degs)
-        degs =-180+degs       
-            
+        degs =-180+degs    
+        if silence==False: 
+            print ("Over 90 degrees Angle=%2.4f ,normalizing )" %degs)
+                                
+    if silence==False:   
+        print ("Disc1 x=%d , y=%d ")  %(x1,y1)
+        print ("Fovea-Optic Disc Angle=%2.4f )" %degs)
     
-    print ("Disc1 x=%d , y=%d ")  %(x1,y1)
-    print ("Fovea-Optic Disc Angle=%2.4f )" %degs)
-    
+    # Choose if to rotate or not
     rows,cols = g.shape
     if abs(degs)<20:
         M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1)
         rot_g = cv2.warpAffine(g,M,(cols,rows))
-   
-        plt.imshow(rot_g,cmap = 'gray')
-        plt.title('Rotation correct'), plt.xticks([]), plt.yticks([])
-        plt.show()
-        
+        if silence==False:    
+            plt.imshow(rot_g,cmap = 'gray')
+            plt.title('Rotation correct'), plt.xticks([]), plt.yticks([])
+            plt.show()      
     else:
-        print("Large angle detected. Probably an error prefer not to rotate")
         rot_g=g
-        
-    print ('--->Image L/R: '),(LR_check)
+        if silence==False:
+            print("Large angle detected. Probably an error. Prefer not to rotate")
+
+    if silence==False:       
+        print ('--->Image L/R: '),(LR_check)
+    
     return(rot_g)  #return green channel rotated
 
 
@@ -296,10 +299,10 @@ def GammaCorrection(img, correction):
 
             Apply gamma correction on input image.
             
-            :param string img: RGB image to be splitted.
+            :param uint8 img: grayscale image to be gamma corrected.
             :param float correction: gamma value.
                
-            :rtype: img - two dimensional numpy array corresponding to gamma corrected image. 
+            :rtype: uint8 img - two dimensional uint8 numpy array corresponding to gamma corrected image. 
     """
     img = img/255.0
     img = cv2.pow(img, correction)
@@ -315,7 +318,7 @@ def BasicMorphology(img, DIL=5, CLO=4, silence=True):
 
             Apply basic morphology operations ( dilate, closing, opening) on input image.
             
-            :param string img: RGB image to be splitted.
+            :param uint8 img: grayscale image to be processed.
             :param int DIL: default=5, iterations of dilating operation.
             :param int COL: default=4, iterations of closing operation.
             :param boolean silence: default is True. Set to False to print the result.

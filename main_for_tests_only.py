@@ -19,39 +19,32 @@ for name in names[:1]:
     print 'Processing image %d'%counter    
     counter = counter + 1
     
-    #img_name = '../data/resized/%s.jpg'%name
     
+    name= '456_left' #'363_right' 
+
     img_name = '../data/resized/%s.jpg'%name
+    
     print ('Image Name: '),(name)
 
-    
     img = ImageProcessing.LoadImage(img_name)
 
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
 
     #features, mask2 = ImageProcessing.DetectHE(g, silence=False)
          
-   # ImageProcessing.Rotation_Correct(r,g, name.split('_')[1], silent=True)
+    # ImageProcessing.Rotation_Correct(r,g, name.split('_')[1], silent=True)
     #ImageProcessing.Rotation_Correct(r,g, name.split('_')[1], silent=False)
     
     #ret,thresh_g = cv2.threshold(g,150,250,cv2.THRESH_BINARY)  
 
-
-    g = cv2.blur(g,(20,20))
-    r = cv2.blur(r,(20,20))
-    g, opening, closing=ImageProcessing.BasicMorphology(g, DIL=3, CLO=4, silence=True)
-    dilate, opening, r=ImageProcessing.BasicMorphology(r, DIL=5, CLO=4, silence=True)
-    
-    r=ImageProcessing.GammaCorrection(r,.8)
-    g=ImageProcessing.GammaCorrection(g,.8)
     
     #dilate, opening, r2=ImageProcessing.BasicMorphology(g, DIL=5, CLO=4, silence=True)
         
     #r2=ImageProcessing.GammaCorrection(r,3)
     #g2=g
     #ret,r = cv2.threshold(r,150,255,cv2.THRESH_BINARY)
-   # cv2.equalizeHist( r, r );
-    ImageProcessing.Rotation_Correct(r,g, name.split('_')[1], silent=False)
+    # cv2.equalizeHist( r, r );
+    g_rotated = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)
 
 '''
     cropped_image = ImageProcessing.CropImage(g, features, silence=True)
