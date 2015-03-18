@@ -71,13 +71,30 @@ def SplitImage(img, silence=True):
         plt.show()
 
     return r,g,b
+    
 
+def Find_Majority(k):
 
+    k=np.asarray(k)
+    hits=list()
+    for n in range (1, len(k) ) :
+        dk=abs(k[n]-k[n-1])
+        if dk <20:
+            hits.append(k[n-1])
+            hits.append(k[n])
+            
+    if len(hits)>0:
+        return int ( sum(hits)/len(hits) )
+    else: 
+        return int ( sum(k)/len(k) )
+        
+    
+    
 def Disc_Detect(img2,disc_type,silent=False):
 
     '''
     Last Maintenance: Antonis
-    
+    hits.append(k[n-1])
     Function definition
     +++++++++++++++++++
             
@@ -112,13 +129,14 @@ def Disc_Detect(img2,disc_type,silent=False):
     else:
         print("ERROR invalid disc type")
     
-    scales=[0.8, 1, 1.2]
+    scales=[0.85, 0.95 , 1, 1.1 , 1.15]
     
     
     methods = ['cv2.TM_CCOEFF_NORMED'] #'cv2.TM_CCOEFF_NORMED',
    # Different methods to choose from
    # , 'cv2.TM_CCORR', 'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
    # methods = ['cv2.TM_SQDIFF_NORMED','cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF']
+    all_centers=list()
     for meth in methods:
         for sc in scales:
             template = cv2.resize(template, ( int(sc*disc_size), int(sc*disc_size) ) )
@@ -140,6 +158,10 @@ def Disc_Detect(img2,disc_type,silent=False):
             
             center_x= (bottom_right[0]+top_left[0])/2
             center_y= (bottom_right[1]+top_left[1])/2
+            
+            all_centers.append ([center_x, center_y])
+            
+            
             if silent==False:
                 cv2.rectangle(img,top_left, bottom_right, 0, 14)
                 cv2.circle(img,(int(center_x),int(center_y)),10,(255,255,255),-11) 
@@ -150,9 +172,12 @@ def Disc_Detect(img2,disc_type,silent=False):
                 plt.title('Detected Point'), plt.xticks([]), plt.yticks([])             
                 plt.show()   
                 print ("Disc x=%d , y=%d ")  %(center_x,center_y)
-                
-                
-            return  center_x, center_y 
+      
+    x_majority = Find_Majority([t[0] for t in all_centers])
+    y_majority = Find_Majority([t[1] for t in all_centers])
+    
+    print ("Majority Vote Disc x=%d , y=%d ")  %(x_majority,y_majority)                
+    return  center_x, center_y 
     
 
 def Rotation_Correct(r,g, LR_check, silent=False):
@@ -172,7 +197,7 @@ def Rotation_Correct(r,g, LR_check, silent=False):
             :rtype: img - two dimensional numpy array corresponding to rotation corrected image. 
     '''   
     #discs are detected
-   
+    w, h = r.shape[::-1]
     x1, y1 = Disc_Detect(r,'WHITE')
     
   #  disc_template2 = cv2.imread('./ImageProcessing/disc_template2.jpg',0) 
@@ -185,20 +210,32 @@ def Rotation_Correct(r,g, LR_check, silent=False):
     # --------Check if image is mirrored -----
     # we consider normal images those have a notch 
     #  on the side of the image (square, triangle, or circle) 
+
     
     plt.imshow(g,cmap = 'gray')
     plt.title('Rotation correct input image'), plt.xticks([]), plt.yticks([])
     plt.show()
     
+    dx= x1-x2
+    dy= y1-y2  
+    
     if LR_check=='right':
-        if x1-x2>0:
+        if dx>0:
             INV=0 #'not_inverted'
         else:
             INV=1 #'inverted'
+            x1=w-x1
+            x2=w-x1
+           
+             
             
     if LR_check=='left':
-        if x1-x2>0:
+        if dx>0:
             INV=1 #'inverted'
+            x1=w-x1
+            x2=w-x1            
+            
+            
         else:
             INV=0 #'not_inverted'
             
@@ -212,21 +249,30 @@ def Rotation_Correct(r,g, LR_check, silent=False):
     else:
          print("Flip NOT detected") 
         
-            
+    dx= (x1-x2)
+    dy= (y1-y2)            
     #------ end Check if image is mirrored 
     
-    dx= abs(x1-x2)
-    dy= abs(y1-y2)
+
         
-    rads = math.atan2(dy,dx)
+    rads = math.atan2(dy,dx) # we are invariant in x direction, i.e it is corrected
+                                # only y will determine the sign of the degrees
     degs = math.degrees(rads)
+    if degs<-120:
+        print ("Over 90 degrees Angle=%2.4f ,normalizing )" %degs)
+        degs =180+degs
+        
+    if degs>120:
+        print ("Over 90 degrees Angle=%2.4f ,normalizing )" %degs)
+        degs =180-degs       
+            
     
     print ("Disc1 x=%d , y=%d ")  %(x1,y1)
     print ("Fovea-Optic Disc Angle=%2.4f )" %degs)
     
     rows,cols = g.shape
-    if abs(degs)<15:
-        M = cv2.getRotationMatrix2D((cols/2,rows/2),-degs,1)
+    if abs(degs)<20:
+        M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1)
         rot_g = cv2.warpAffine(g,M,(cols,rows))
    
         plt.imshow(rot_g,cmap = 'gray')
@@ -234,9 +280,10 @@ def Rotation_Correct(r,g, LR_check, silent=False):
         plt.show()
         
     else:
-        print("Large angle detected. Probably an error prefer not to flip")
+        print("Large angle detected. Probably an error prefer not to rotate")
         rot_g=g
         
+    print ('--->Image L/R: '),(LR_check)
     return(rot_g)  #return green channel rotated
 
 

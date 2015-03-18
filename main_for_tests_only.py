@@ -11,7 +11,7 @@ import LoadData
 
 names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[500, 500])
 for i in range(labels.shape[0]):
-    if labels[i] == 4:
+    if labels[i] == 3:
         labels[i] = 1
 counter = 1
 for name in names[:1]: 
@@ -22,7 +22,7 @@ for name in names[:1]:
     #img_name = '../data/resized/%s.jpg'%name
     
     img_name = '../data/resized/%s.jpg'%name
-    
+    print ('Image Name: '),(name)
 
     
     img = ImageProcessing.LoadImage(img_name)
@@ -37,13 +37,14 @@ for name in names[:1]:
     #ret,thresh_g = cv2.threshold(g,150,250,cv2.THRESH_BINARY)  
 
 
-    g = cv2.blur(g,(10,10))
+    g = cv2.blur(g,(20,20))
     r = cv2.blur(r,(20,20))
     g, opening, closing=ImageProcessing.BasicMorphology(g, DIL=2, CLO=4, silence=True)
-    dilate, opening, r=ImageProcessing.BasicMorphology(r, DIL=5, CLO=4, silence=True)
+    dilate, opening, r=ImageProcessing.BasicMorphology(r, DIL=5, CLO=3, silence=True)
     
     r=ImageProcessing.GammaCorrection(r,2)
     g=ImageProcessing.GammaCorrection(g,1.5)
+    
     #dilate, opening, r2=ImageProcessing.BasicMorphology(g, DIL=5, CLO=4, silence=True)
         
     #r2=ImageProcessing.GammaCorrection(r,3)
