@@ -39,11 +39,11 @@ for name in names[:1]:
 
     g = cv2.blur(g,(20,20))
     r = cv2.blur(r,(20,20))
-    g, opening, closing=ImageProcessing.BasicMorphology(g, DIL=2, CLO=4, silence=True)
-    dilate, opening, r=ImageProcessing.BasicMorphology(r, DIL=5, CLO=3, silence=True)
+    g, opening, closing=ImageProcessing.BasicMorphology(g, DIL=3, CLO=4, silence=True)
+    dilate, opening, r=ImageProcessing.BasicMorphology(r, DIL=5, CLO=4, silence=True)
     
-    r=ImageProcessing.GammaCorrection(r,2)
-    g=ImageProcessing.GammaCorrection(g,1.5)
+    r=ImageProcessing.GammaCorrection(r,.8)
+    g=ImageProcessing.GammaCorrection(g,.8)
     
     #dilate, opening, r2=ImageProcessing.BasicMorphology(g, DIL=5, CLO=4, silence=True)
         

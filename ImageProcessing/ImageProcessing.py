@@ -119,12 +119,12 @@ def Disc_Detect(img2,disc_type,silent=False):
 
     if disc_type =='DARK':
         template = cv2.imread('./ImageProcessing/fovea_template.jpg',0)
-        disc_size=200
+        disc_size=170
         #template = cv2.resize(template, (200, 200) )
 
     elif disc_type =='WHITE':
         template = cv2.imread('./ImageProcessing/disc_template.jpg',0)
-        disc_size=240
+        disc_size=230
         #template = cv2.resize(template, (250, 250) )
     else:
         print("ERROR invalid disc type")
@@ -264,7 +264,7 @@ def Rotation_Correct(r,g, LR_check, silent=False):
         
     if degs>120:
         print ("Over 90 degrees Angle=%2.4f ,normalizing )" %degs)
-        degs =180-degs       
+        degs =-180+degs       
             
     
     print ("Disc1 x=%d , y=%d ")  %(x1,y1)
