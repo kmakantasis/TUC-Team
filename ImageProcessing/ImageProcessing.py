@@ -106,8 +106,10 @@ def Disc_Detect(img2,disc_type,silence=False):
             :rtype: Returns center_x of detected disc 
             :rtype: Returns center_y of detected disc 
     ''' 
-    
+  
 
+
+    #loading templates
     if disc_type =='DARK':
         template = cv2.imread('./ImageProcessing/fovea_template.jpg',0)
         disc_size=170 #initial scale
@@ -120,7 +122,9 @@ def Disc_Detect(img2,disc_type,silence=False):
     else:
         print("ERROR invalid disc type")
     
-    scales=[0.85, 0.95 , 1, 1.1 , 1.15]
+    scales=[0.85, 0.95 , 1, 1.11 ]
+     
+    templates=[template]
       
     methods = ['cv2.TM_CCOEFF_NORMED'] #'cv2.TM_CCOEFF_NORMED',
    # Different methods to choose from
@@ -129,39 +133,44 @@ def Disc_Detect(img2,disc_type,silence=False):
     all_centers=list()
     for meth in methods:
         for sc in scales:
-            template = cv2.resize(template, ( int(sc*disc_size), int(sc*disc_size) ) )
+            for templ in templates:
+                templ = cv2.resize(templ, ( int(sc*disc_size), int(sc*disc_size) ) )
+                
+                w, h = templ.shape[::-1]
+                img = img2.copy()
+                method = eval(meth)
             
-            w, h = template.shape[::-1]
-            img = img2.copy()
-            method = eval(meth)
+                # Apply template Matching
+                res = cv2.matchTemplate(img,templ,method)
+                min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+            
+                # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+                if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+                    top_left = min_loc
+                else:
+                    top_left = max_loc
+                
+                          
+                
+                bottom_right = (top_left[0] + w, top_left[1] + h)
+                
+                center_x= (bottom_right[0]+top_left[0])/2
+                center_y= (bottom_right[1]+top_left[1])/2
+                
+                all_centers.append ([center_x, center_y])
+                
+                
+                if silence==False:
+                    cv2.rectangle(img,top_left, bottom_right, 0, 14)
+                    cv2.circle(img,(int(center_x),int(center_y)),10,(255,255,255),-11) 
         
-            # Apply template Matching
-            res = cv2.matchTemplate(img,template,method)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-        
-            # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
-            if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
-                top_left = min_loc
-            else:
-                top_left = max_loc
-            bottom_right = (top_left[0] + w, top_left[1] + h)
-            
-            center_x= (bottom_right[0]+top_left[0])/2
-            center_y= (bottom_right[1]+top_left[1])/2
-            
-            all_centers.append ([center_x, center_y])
-            
-            
-            if silence==False:
-                cv2.rectangle(img,top_left, bottom_right, 0, 14)
-                cv2.circle(img,(int(center_x),int(center_y)),10,(255,255,255),-11) 
-    
-                plt.subplot(121),plt.imshow(res,cmap = 'gray')
-                plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
-                plt.subplot(122),plt.imshow(img,cmap = 'gray')
-                plt.title('Detected Point'), plt.xticks([]), plt.yticks([])             
-                plt.show()   
-                print ("Disc x=%d , y=%d ")  %(center_x,center_y)
+                    plt.subplot(121),plt.imshow(res,cmap = 'gray')
+                    plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
+                    plt.subplot(122),plt.imshow(img,cmap = 'gray')
+                    plt.title('Detected Point'), plt.xticks([]), plt.yticks([])             
+                    plt.show()
+                    print("Confidence of detection=%f") %(max_val) 
+                    print ("Disc x=%d , y=%d ")  %(center_x,center_y)
       
     x_majority = Find_Majority([t[0] for t in all_centers])
     y_majority = Find_Majority([t[1] for t in all_centers])
@@ -171,7 +180,83 @@ def Disc_Detect(img2,disc_type,silence=False):
                 
     return x_majority, y_majority 
     
+def Global_LR_Gradient(g, silence=False):
+    '''
+    Last Maintenance: Antonis
+    Function definition
+    +++++++++++++++++++
+        .. py:function:: 
 
+            Detects in horizontal direction the global gradient in order to flip or not.
+            It is far more robust than using the location of Dark and White Discs.
+              
+    
+    '''   
+
+    w, h = g.shape[::-1]
+    black_white = cv2.imread('./ImageProcessing/black_white.jpg',0)
+    black_white = cv2.resize(black_white, (w, int(1*h) ))
+    
+    white_black = cv2.imread('./ImageProcessing/white_black.jpg',0)
+    white_black = cv2.resize(white_black, (w, int(1*h )))
+    method = ['cv2.TM_CCOEFF_NORMED']
+    grad_templates=[black_white, white_black]
+    
+    hist = cv2.calcHist([g],[0],None,[4],[0,256])
+    
+    if (hist[0]<500000):
+        gamma= abs(550000-hist[0])/250000. +1
+        img_g=GammaCorrection(g,gamma)
+    else:
+        img_g=g
+        gamma=1
+        
+    belief=list()
+    for templ in grad_templates:
+                
+        w, h = templ.shape[::-1]
+        img = img_g.copy()
+         
+        # Apply template Matching
+        res = cv2.matchTemplate(img,templ,cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+        
+        belief.append(max_val)
+        #print("Confidence  max_val=%f") %(max_val)
+        #print("Gradient type=%s") %(templ) 
+
+    
+        # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
+
+        if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+            top_left = min_loc
+        else:
+            top_left = max_loc
+               
+        
+        bottom_right = (top_left[0] + w, top_left[1] + h)
+        
+        center_x= (bottom_right[0]+top_left[0])/2
+        center_y= (bottom_right[1]+top_left[1])/2
+        
+               
+        if silence==False:
+            cv2.rectangle(img,top_left, bottom_right, 0, 14)
+            cv2.circle(img,(int(center_x),int(center_y)),10,(255,255,255),-11) 
+
+            plt.subplot(121),plt.imshow(res,cmap = 'gray')
+            plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
+            plt.subplot(122),plt.imshow(img,cmap = 'gray')
+            plt.title('Detected Point'), plt.xticks([]), plt.yticks([])             
+            plt.show()   
+            print("Gradient  max_val=%f") %(max_val) 
+            print ("Gradient x=%d , y=%d ")  %(center_x,center_y)    
+    
+    WHITE_DISC_ON_RIGHT = belief[0]>belief[1]
+    return WHITE_DISC_ON_RIGHT
+   
+    
+    
 def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     
     '''
@@ -202,16 +287,22 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
 
     g = cv2.blur(g,(10,10))
     r = cv2.blur(r,(20,20))
-    g, opening, closing=BasicMorphology(g, DIL=3, CLO=4, silence=True)
+    g, g_opening, closing=BasicMorphology(g, DIL=3, CLO=4, silence=True)
     dilate, opening, r=BasicMorphology(r, DIL=5, CLO=4, silence=True)
     
     r=GammaCorrection(r,.8)
     g=GammaCorrection(g,.8)    
+
      
     # Detect the two discs
     w, h = r.shape[::-1]
-    x1, y1 = Disc_Detect(r,'WHITE',silence=True)
-    x2, y2 = Disc_Detect(g,'DARK',silence=True)
+    x1, y1 = Disc_Detect(r,'WHITE',silence)
+    x2, y2 = Disc_Detect(g,'DARK',silence)
+    
+    #---------------additional FLip check------
+    WHITE_ON_THE_RIGHT = Global_LR_Gradient(dilate, silence)
+    
+    #-----------------------------------------
           
     # --------Check if image is mirrored -----
     # we consider normal images those have a notch 
@@ -219,6 +310,15 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     
     dx= x1-x2   
     dy= y1-y2  
+    if silence==False:    
+        if dx>0 and WHITE_ON_THE_RIGHT==1:
+            print("----PASS Consistency in L/R check-----")
+        elif dx<0 and WHITE_ON_THE_RIGHT==0:
+            print("----PASS Consistency in L/R check-----")        
+        elif dx>0 and WHITE_ON_THE_RIGHT==0:
+            print("----FAILED Consistency  in L/R check-----")       
+        elif dx<0 and WHITE_ON_THE_RIGHT==1:
+            print("----FAILED Consistency  in L/R check-----")        
     
     if silence==False:
         print ("Initial dx=%d " %dx)
@@ -229,7 +329,7 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
         
     # Do the left/right checking    
     if LR_check=='right':
-        if dx>0:
+        if WHITE_ON_THE_RIGHT: #if WHITE disc on the right
             INV=0 #'not_inverted'
         else:
             INV=1 #'inverted'
@@ -237,7 +337,7 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
             x2=w-x1
                                 
     if LR_check=='left':
-        if dx>0:
+        if WHITE_ON_THE_RIGHT: #if WHITE disc on the right
             INV=1 #'inverted'
             x1=w-x1
             x2=w-x1                          
@@ -247,14 +347,14 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     if INV==1:
         g_original=cv2.flip(g_original, 1)      #Flip is done 
         if silence==False:   
-            print("Flip detected") 
+            print("*****Flip detected and done*******") 
             
-            plt.imshow(g,cmap = 'gray')
+            plt.imshow(g_original,cmap = 'gray')
             plt.title('Green flipped image'), plt.xticks([]), plt.yticks([])
             plt.show()
     else:
         if silence==False:   
-            print("Flip NOT detected") 
+            print("******Flip NOT detected*******") 
         
     dx= (x1-x2)
     dy= (y1-y2)            
@@ -263,7 +363,7 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     rads = math.atan2(dy,dx)                                  
     degs = math.degrees(rads)
 
-# refining degrees to be in the first and fourt quadratiles 
+    # refining degrees to be in the first and fourt quadratiles 
     if degs<-120:
         degs =180+degs
         if silence==False:   

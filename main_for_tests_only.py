@@ -11,7 +11,7 @@ import LoadData
 
 names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[500, 500])
 for i in range(labels.shape[0]):
-    if labels[i] == 3:
+    if labels[i] == 4:
         labels[i] = 1
 counter = 1
 for name in names[:1]: 
@@ -19,10 +19,18 @@ for name in names[:1]:
     print 'Processing image %d'%counter    
     counter = counter + 1
     
+    #name='95_right'
+    #name='621_right' #not solved
+
+
+
     
-    #name= '456_left' #'363_right' 
+
+    #name='456_left' 
+    #name='363_right' 
 
     img_name = '../data/resized/%s.jpg'%name
+    img_name_temp = '../%s.jpg'%name
     
     print ('Image Name: '),(name)
 
@@ -45,7 +53,7 @@ for name in names[:1]:
     #ret,r = cv2.threshold(r,150,255,cv2.THRESH_BINARY)
     # cv2.equalizeHist( r, r );
     g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=False)
-
+    #ret = cv2.imwrite(img_name_temp, g_rotated)
 '''
     cropped_image = ImageProcessing.CropImage(g, features, silence=True)
 
