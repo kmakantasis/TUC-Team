@@ -1,9 +1,22 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-def ImageDatasetCreation(csv_name='data/trainLabels.csv', labels_idx=[0,4], number_of_data=[100, 100]):
+def ImageDatasetCreation(csv_name='data/trainLabels.csv', labels_idx=[0,4], number_of_data=[100, 100], LRB='both'):
     all_data_names = np.genfromtxt(csv_name,usecols=(0),delimiter=',',dtype=None, skip_header=1)
     all_data_labels = np.genfromtxt(csv_name,usecols=(1),delimiter=',',dtype=float, skip_header=1)
+    
+    ############################
+    LRB_names = []
+    LRB_labels = []
+    if LRB != 'both':
+        for i in range(all_data_names.shape[0]):
+            if all_data_names[i].split('_')[1]==LRB:
+                LRB_names.append(all_data_names[i])
+                LRB_labels.append(all_data_labels[i])
+                
+        all_data_names = np.asarray(LRB_names)
+        all_data_labels = np.asarray(LRB_labels)    
+    ############################
 
     all_data_labeled_0 = [all_data_names[i] for i in range(len(all_data_labels)) if all_data_labels[i]==0]
     all_data_labeled_1 = [all_data_names[i] for i in range(len(all_data_labels)) if all_data_labels[i]==1]

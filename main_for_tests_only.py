@@ -9,7 +9,7 @@ import ImageProcessing
 import LoadData
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[500, 500])
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[3, 3], LRB='both')
 for i in range(labels.shape[0]):
     if labels[i] == 4:
         labels[i] = 1
@@ -29,7 +29,7 @@ for name in names[:1]:
     #name='456_left' 
     #name='363_right' 
 
-    img_name = '../data/resized/%s.jpg'%name
+    img_name = 'data/resized/%s.jpg'%name
     img_name_temp = '../%s.jpg'%name
     
     print ('Image Name: '),(name)
@@ -52,13 +52,22 @@ for name in names[:1]:
     #g2=g
     #ret,r = cv2.threshold(r,150,255,cv2.THRESH_BINARY)
     # cv2.equalizeHist( r, r );
-    g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=False)
+    g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)
     #ret = cv2.imwrite(img_name_temp, g_rotated)
-'''
-    cropped_image = ImageProcessing.CropImage(g, features, silence=True)
-
-    res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
-
-    out_name = '../data/input/%s.jpg'%name
-    ret = cv2.imwrite(out_name, res)
-'''
+    
+    import matplotlib.pylab as plt
+    
+    plt.figure()
+    plt.imshow(g, cmap = 'gray')
+    plt.show()
+    
+    plt.figure()
+    plt.imshow(g_rotated, cmap = 'gray')
+    plt.show()
+#    cropped_image = ImageProcessing.CropImage(g, features, silence=True)
+#
+#    res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
+#
+#    out_name = '../data/input/%s.jpg'%name
+#    ret = cv2.imwrite(out_name, res)
+#

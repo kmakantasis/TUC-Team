@@ -8,19 +8,22 @@ import cv2
 import ImageProcessing
 import LoadData
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[500, 500])
-for i in range(labels.shape[0]):
-    if labels[i] == 4:
-        labels[i] = 1
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[0,2,3,4], number_of_data=[1000, 300, 350, 350], LRB='left')
+#for i in range(labels.shape[0]):
+#    if labels[i] > 0:
+#        labels[i] = 1
 counter = 1
 for name in names: 
     
+    print name
+    
     print 'Processing image %d'%counter 
     print ('Image Name: '),(name)
+    print  'Image Label: %f'%labels[counter-1]
     
     counter = counter + 1
     
-    img_name = '../data/resized/%s.jpg'%name
+    img_name = 'data/resized/%s.jpg'%name
     img = ImageProcessing.LoadImage(img_name)
 
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
@@ -38,5 +41,5 @@ for name in names:
 
     res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
 
-    out_name = '../data/input/%s.jpg'%name
+    out_name = 'data/input/%s.jpg'%name
     ret = cv2.imwrite(out_name, res)

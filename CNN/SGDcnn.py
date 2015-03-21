@@ -10,10 +10,10 @@ import ConvPoolLayer
 import MultiLayerPerceptron
 import LogisticLayer
 
-def test_cnn(names, labels, learning_rate=0.1, n_epochs=200, nkerns=[10, 10, 10, 10, 10], batch_size=20):
+def test_cnn(names, labels, learning_rate=0.05, n_epochs=200, nkerns=[3, 6, 12, 24, 48], batch_size=10):
     
     # Load dataset
-    datasets = CNNLoadData.LoadData(names, labels, ratio=0.80)
+    datasets = CNNLoadData.LoadData(names, labels, ratio=0.50)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
@@ -62,10 +62,10 @@ def test_cnn(names, labels, learning_rate=0.1, n_epochs=200, nkerns=[10, 10, 10,
     layer5 = MultiLayerPerceptron.HiddenLayer(rng, 
                                       layer4.output.flatten(2),
                                       nkerns[4] * 4 * 4, 
-                                      150, 
+                                      64, 
                                       activation=T.tanh)
                                       
-    layer6 = LogisticLayer.LogisticLayer(layer5.output, 150, 2)
+    layer6 = LogisticLayer.LogisticLayer(layer5.output, 64, 2)
     
     cost = layer6.negative_log_likelihood(y)
     
@@ -84,6 +84,11 @@ def test_cnn(names, labels, learning_rate=0.1, n_epochs=200, nkerns=[10, 10, 10,
                                   outputs=[layer6.errors(y)],
                                   givens={x:valid_set_x[index * batch_size: (index+1) * batch_size],
                                           y:valid_set_y[index * batch_size: (index+1) * batch_size]})
+                                          
+    train_error = theano.function(inputs=[index],
+                                  outputs=[layer6.errors(y)],
+                                  givens={x:train_set_x[index * batch_size: (index+1) * batch_size],
+                                          y:train_set_y[index * batch_size: (index+1) * batch_size]})
                                           
     test_model = theano.function(inputs=[index],
                                  outputs=[layer6.errors(y)],
@@ -116,6 +121,14 @@ def test_cnn(names, labels, learning_rate=0.1, n_epochs=200, nkerns=[10, 10, 10,
             train_model(minibatch_index)
 
             if (iter + 1) % validation_frequency == 0:
+                
+                train_losses = [train_error(i) for i in xrange(n_train_batches)]
+                this_train_loss = np.mean(train_losses)
+                print('epoch %i, minibatch %i/%i, train set error %f %%' %  (epoch, 
+                                                                              minibatch_index + 1, 
+                                                                              n_train_batches,
+                                                                              this_train_loss * 100.))
+                                                                              
 
                 validation_losses = [valid_model(i) for i in xrange(n_valid_batches)]
                 this_validation_loss = np.mean(validation_losses)
