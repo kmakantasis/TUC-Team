@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+import os
 
-def ImageDatasetCreation(csv_name='data/trainLabels.csv', labels_idx=[0,4], number_of_data=[100, 100], LRB='both'):
+def ImageDatasetCreation(csv_name='../data/trainLabels.csv', labels_idx=[0,4], number_of_data=[100, 100], LRB='both'):
     all_data_names = np.genfromtxt(csv_name,usecols=(0),delimiter=',',dtype=None, skip_header=1)
     all_data_labels = np.genfromtxt(csv_name,usecols=(1),delimiter=',',dtype=float, skip_header=1)
     
@@ -28,7 +29,7 @@ def ImageDatasetCreation(csv_name='data/trainLabels.csv', labels_idx=[0,4], numb
     
     data_to_use_names = []
     for i in range(len(labels_idx)):
-        assert len(all_data_labeled[labels_idx[i]]) > number_of_data[i]
+        assert len(all_data_labeled[labels_idx[i]]) >= number_of_data[i]
         data_to_use_names.append(all_data_labeled[labels_idx[i]][0:number_of_data[i]])
 
 
@@ -51,6 +52,25 @@ def ImageDatasetCreation(csv_name='data/trainLabels.csv', labels_idx=[0,4], numb
     return specific_data_to_use_names, specific_data_to_use_labels
     
     
-#names, labels = ImageDatasetCreation()
+
+def InputDataset(csv_name='../data/trainLabels.csv', input_folder='../data/input'):
+    files = [f for f in os.listdir(input_folder)]
+
+    all_data_names = np.genfromtxt(csv_name,usecols=(0),delimiter=',',dtype=None, skip_header=1)
+    all_data_labels = np.genfromtxt(csv_name,usecols=(1),delimiter=',',dtype=float, skip_header=1)
+
+    names_input = []
+    labels_input = []
+
+    for name in files:
+        name_idx = np.where(all_data_names==name.split('.')[0])
+        names_input.append(all_data_names[name_idx])
+        labels_input.append(all_data_labels[name_idx])
+        
+    return np.asarray(names_input), np.asarray(labels_input)
+
+
+
+
 
 

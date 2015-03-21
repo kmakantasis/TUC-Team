@@ -4,14 +4,12 @@ import sys
 sys.path.append('./ImageProcessing')
 sys.path.append('./DataCreation')
 import cv2
-
+import numpy as np
 import ImageProcessing
 import LoadData
 
 names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[0,2,3,4], number_of_data=[1000, 300, 350, 350], LRB='left')
-#for i in range(labels.shape[0]):
-#    if labels[i] > 0:
-#        labels[i] = 1
+
 counter = 1
 for name in names: 
     
@@ -42,4 +40,13 @@ for name in names:
     res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
 
     out_name = 'data/input/%s.jpg'%name
-    ret = cv2.imwrite(out_name, res)
+#    ret = cv2.imwrite(out_name, res)
+
+#names_input, labels_input = LoadData.InputDataset(csv_name='./CSV/trainLabels.csv', input_folder='data/input')
+#
+#labels_0_1 = np.zeros((2000,))
+#for i in range(labels.shape[0]):
+#    if labels_input[i][0] > 0:
+#        labels_0_1[i] = 1
+#        
+#names_input = np.reshape(names_input, (2000, ))

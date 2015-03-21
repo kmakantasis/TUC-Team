@@ -9,11 +9,13 @@ import CNNLoadData
 import ConvPoolLayer
 import MultiLayerPerceptron
 import LogisticLayer
+import LoadData
 
-def test_cnn(names, labels, learning_rate=0.05, n_epochs=200, nkerns=[3, 6, 12, 24, 48], batch_size=10):
+
+def test_cnn(names, labels, learning_rate=0.05, L_reg=0.1, n_epochs=200, nkerns=[3, 6, 12, 24, 48], batch_size=50):
     
     # Load dataset
-    datasets = CNNLoadData.LoadData(names, labels, ratio=0.50)
+    datasets = CNNLoadData.LoadData(names, labels, ratio=0.80)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
@@ -58,19 +60,26 @@ def test_cnn(names, labels, learning_rate=0.05, n_epochs=200, nkerns=[3, 6, 12, 
                                          filter_shape=(nkerns[4], nkerns[3], 5, 5),
                                          image_shape=(batch_size, nkerns[3], 12, 12))
                                          
-                            
-    layer5 = MultiLayerPerceptron.HiddenLayer(rng, 
+                                         
+    layer5 = MultiLayerPerceptron.MLP(rng,
                                       layer4.output.flatten(2),
-                                      nkerns[4] * 4 * 4, 
-                                      64, 
-                                      activation=T.tanh)
-                                      
-    layer6 = LogisticLayer.LogisticLayer(layer5.output, 64, 2)
+                                      nkerns[4] * 4 * 4,
+                                      64,
+                                      2)
+                            
+#    layer5 = MultiLayerPerceptron.HiddenLayer(rng, 
+#                                      layer4.output.flatten(2),
+#                                      nkerns[4] * 4 * 4, 
+#                                      64, 
+#                                      activation=T.tanh)
+#                                      
+#    layer6 = LogisticLayer.LogisticLayer(layer5.output, 64, 2)
     
-    cost = layer6.negative_log_likelihood(y)
+    cost = (layer5.negative_log_likelihood(y) + L_reg * layer5.L1)
     
     # Function to train the model
-    params = layer6.params + layer5.params + layer4.params + layer3.params + layer2.params + layer1.params + layer0.params
+    #params = layer6.params + layer5.params + layer4.params + layer3.params + layer2.params + layer1.params + layer0.params
+    params = layer5.params + layer4.params + layer3.params + layer2.params + layer1.params + layer0.params
     gparams = T.grad(cost, params)
     updates = [(param, param - learning_rate * gparam) for param, gparam in zip(params, gparams)]
     train_model = theano.function(inputs=[index],
@@ -81,17 +90,17 @@ def test_cnn(names, labels, learning_rate=0.05, n_epochs=200, nkerns=[3, 6, 12, 
                                           
     # Functions to test and validate the model
     valid_model = theano.function(inputs=[index],
-                                  outputs=[layer6.errors(y)],
+                                  outputs=[layer5.errors(y)],
                                   givens={x:valid_set_x[index * batch_size: (index+1) * batch_size],
                                           y:valid_set_y[index * batch_size: (index+1) * batch_size]})
                                           
     train_error = theano.function(inputs=[index],
-                                  outputs=[layer6.errors(y)],
+                                  outputs=[layer5.errors(y)],
                                   givens={x:train_set_x[index * batch_size: (index+1) * batch_size],
                                           y:train_set_y[index * batch_size: (index+1) * batch_size]})
                                           
     test_model = theano.function(inputs=[index],
-                                 outputs=[layer6.errors(y)],
+                                 outputs=[layer5.errors(y)],
                                  givens={x:test_set_x[index * batch_size: (index+1) * batch_size],
                                          y:test_set_y[index * batch_size: (index+1) * batch_size]})
                                          
@@ -169,4 +178,14 @@ def test_cnn(names, labels, learning_rate=0.05, n_epochs=200, nkerns=[3, 6, 12, 
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
 if __name__ == '__main__':
-    test_cnn(names, labels)
+    
+    names_input, labels_input = LoadData.InputDataset(csv_name='../CSV/trainLabels.csv', input_folder='../data/input')
+
+    labels_0_1 = np.zeros((2000,))
+    for i in range(labels_input.shape[0]):
+        if labels_input[i][0] > 0:
+            labels_0_1[i] = 1
+        
+    names_input = np.reshape(names_input, (2000, ))
+   
+    test_cnn(names_input, labels_0_1)
