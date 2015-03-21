@@ -12,7 +12,7 @@ import LogisticLayer
 import LoadData
 
 
-def test_cnn(names, labels, learning_rate=0.05, L_reg=0.1, n_epochs=200, nkerns=[3, 6, 12, 24, 48], batch_size=50):
+def test_cnn(names, labels, learning_rate=0.05, L_reg=0.005, n_epochs=200, nkerns=[3, 6, 12, 24, 48], batch_size=50):
     
     # Load dataset
     datasets = CNNLoadData.LoadData(names, labels, ratio=0.80)
