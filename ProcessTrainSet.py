@@ -22,7 +22,7 @@ for name in names:
     counter = counter + 1
     
     img_name = '~/data/resized/%s.jpg'%name
-    print ('Complete Image path: '),(name)
+    print ('Complete Image path: '),(img_name)
     
     img = ImageProcessing.LoadImage(img_name)
 
