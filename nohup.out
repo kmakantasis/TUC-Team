@@ -1,0 +1,12 @@
+43240_right
+Processing image 1
+Image Name:  43240_right
+Image Label: 0.000000
+Traceback (most recent call last):
+  File "ProcessTrainSet.py", line 25, in <module>
+    img = ImageProcessing.LoadImage(img_name)
+  File "./ImageProcessing/ImageProcessing.py", line 37, in LoadImage
+    im_r = ImageRescale(im_r)
+  File "./ImageProcessing/ImageProcessing.py", line 9, in ImageRescale
+    height, width, depth = im_r.shape
+ValueError: need more than 0 values to unpack
