@@ -22,6 +22,8 @@ for name in names:
     counter = counter + 1
     
     img_name = '~/data/resized/%s.jpg'%name
+    print ('Complete Image path: '),(name)
+    
     img = ImageProcessing.LoadImage(img_name)
 
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
