@@ -21,7 +21,7 @@ for name in names:
     
     counter = counter + 1
     
-    img_name = '~/data/resized/%s.jpg'%name
+    img_name = '../data/resized/%s.jpg'%name
     print ('Complete Image path: '),(img_name)
     
     img = ImageProcessing.LoadImage(img_name)
@@ -41,5 +41,5 @@ for name in names:
 
     res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
 
-    out_name = '~/data/input/%s.jpg'%name
+    out_name = '../data/input/%s.jpg'%name
     ret = cv2.imwrite(out_name, res)
