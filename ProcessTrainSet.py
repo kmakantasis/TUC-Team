@@ -69,7 +69,7 @@ names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', 
 #for name in names: 
  
 
-pool_size = multiprocessing.cpu_count()
+pool_size = multiprocessing.cpu_count()*2
 
 pool = multiprocessing.Pool(processes=pool_size,initializer=start_process,
                                 maxtasksperchild=2)   
