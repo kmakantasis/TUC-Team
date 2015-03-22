@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #auto path loading in order to run easily from terminal
 import sys
+import matplotlib.image as mpimg
+
 sys.path.append('./ImageProcessing')
 sys.path.append('./DataCreation')
 import cv2
@@ -9,49 +11,51 @@ import ImageProcessing
 import LoadData
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[3, 3], LRB='both')
-for i in range(labels.shape[0]):
-    if labels[i] == 4:
-        labels[i] = 1
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[2,1], number_of_data=[30,30], LRB='both')
+
+names_labels= (names, labels )
+
+'''
+for i in range(names_labels[1].shape[0]):
+    if names_labels[1][i] == 4:
+        names_labels[1][i] = 1
+'''       
+        
 counter = 1
-for name in names[:1]: 
+for i in range(1):#range(names.shape[0]):
+    name=names[i]
+    label=labels[i]
     
     print 'Processing image %d'%counter    
     counter = counter + 1
     
-    #name='95_right'
-    #name='621_right' #not solved
-
-
-
-    
+    name='229_left' #not solved
 
     #name='456_left' 
     #name='363_right' 
 
-    img_name = 'data/resized/%s.jpg'%name
+    img_name = '../data/resized/%s.jpg'%name
     img_name_temp = '../%s.jpg'%name
     
-    print ('Image Name: '),(name)
-
     img = ImageProcessing.LoadImage(img_name)
 
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
+    
+
 
     #features, mask2 = ImageProcessing.DetectHE(g, silence=False)
-         
-    # ImageProcessing.Rotation_Correct(r,g, name.split('_')[1], silent=True)
-    #ImageProcessing.Rotation_Correct(r,g, name.split('_')[1], silent=False)
     
-    #ret,thresh_g = cv2.threshold(g,150,250,cv2.THRESH_BINARY)  
-
+    ImageProcessing.DetectMicroAN(g)
     
-    #dilate, opening, r2=ImageProcessing.BasicMorphology(g, DIL=5, CLO=4, silence=True)
+    #cropped_image = ImageProcessing.CropImage(g, features, silence=True)
+    
+    image = mpimg.imread(img_name)
+    plt.imshow(image)
+    plt.show()
+    
+    print '--->Image Name:%s, Image label=%d '% (name,label)
         
-    #r2=ImageProcessing.GammaCorrection(r,3)
-    #g2=g
-    #ret,r = cv2.threshold(r,150,255,cv2.THRESH_BINARY)
-    # cv2.equalizeHist( r, r );
+'''
     g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)
     #ret = cv2.imwrite(img_name_temp, g_rotated)
     
@@ -64,6 +68,7 @@ for name in names[:1]:
     plt.figure()
     plt.imshow(g_rotated, cmap = 'gray')
     plt.show()
+    '''
 #    cropped_image = ImageProcessing.CropImage(g, features, silence=True)
 #
 #    res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
