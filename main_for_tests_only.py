@@ -9,12 +9,19 @@ import ImageProcessing
 import LoadData
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', number_of_data=[3, 3], LRB='both')
-for i in range(labels.shape[0]):
-    if labels[i] == 4:
-        labels[i] = 1
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[2,1], number_of_data=[30,30], LRB='both')
+
+names_labels= (names, labels )
+
+'''
+for i in range(names_labels[1].shape[0]):
+    if names_labels[1][i] == 4:
+        names_labels[1][i] = 1
+'''       
+        
 counter = 1
-for name in names[:1]: 
+for i in range(1):#range(names.shape[0]):
+     
     
     print 'Processing image %d'%counter    
     counter = counter + 1
@@ -22,36 +29,32 @@ for name in names[:1]:
     #name='95_right'
     #name='621_right' #not solved
 
-
-
-    
-
     #name='456_left' 
     #name='363_right' 
 
-    img_name = 'data/resized/%s.jpg'%name
-    img_name_temp = '../%s.jpg'%name
+    img_name = '../data/resized/%s.jpg'%names[i]
+    img_name_temp = '../%s.jpg'%names[i]
     
-    print ('Image Name: '),(name)
-
     img = ImageProcessing.LoadImage(img_name)
 
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
-
-    #features, mask2 = ImageProcessing.DetectHE(g, silence=False)
-         
-    # ImageProcessing.Rotation_Correct(r,g, name.split('_')[1], silent=True)
-    #ImageProcessing.Rotation_Correct(r,g, name.split('_')[1], silent=False)
     
-    #ret,thresh_g = cv2.threshold(g,150,250,cv2.THRESH_BINARY)  
 
+
+    features, mask2 = ImageProcessing.DetectHE(g, silence=False)
     
-    #dilate, opening, r2=ImageProcessing.BasicMorphology(g, DIL=5, CLO=4, silence=True)
+    cropped_image = ImageProcessing.CropImage(g, features, silence=True)
+    plt.figure()
+    plt.imshow(cropped_image, cmap = 'gray')
+    plt.show()
+    
+    plt.figure()
+    plt.imshow(g, cmap = 'gray')
+    plt.show()
+    
+    print '--->Image Name:%s, Image label=%d '% (names[i],labels[i])
         
-    #r2=ImageProcessing.GammaCorrection(r,3)
-    #g2=g
-    #ret,r = cv2.threshold(r,150,255,cv2.THRESH_BINARY)
-    # cv2.equalizeHist( r, r );
+'''
     g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)
     #ret = cv2.imwrite(img_name_temp, g_rotated)
     
@@ -64,6 +67,7 @@ for name in names[:1]:
     plt.figure()
     plt.imshow(g_rotated, cmap = 'gray')
     plt.show()
+    '''
 #    cropped_image = ImageProcessing.CropImage(g, features, silence=True)
 #
 #    res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
