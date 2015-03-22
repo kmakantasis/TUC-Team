@@ -7,19 +7,35 @@ import cv2
 import numpy as np
 import ImageProcessing
 import LoadData
+import multiprocessing
+import os
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[0,1,2,3,4], number_of_data=[25810, 2443, 5292, 873, 708], LRB='both')
+def start_process():
+    print 'Starting', multiprocessing.current_process().name
 
-counter = 1
-for name in names: 
-    
+def worker(name):
+    print 'Worker'
+   
+  #  counter = 1
+    #for name in names: 
+        
     print name
     
-    print 'Processing image %d'%counter 
-    print ('Image Name: '),(name)
-    print  'Image Label: %f'%labels[counter-1]
+    #print 'Processing image %d'%counter 
+    print ('Processing Image Name: '),(name)
+   # print  'Image Label: %f'%labels[counter-1]
     
-    counter = counter + 1
+   
+    is_file=os.path.isfile('../data/input/%s.jpg'%name)
+    if is_file==1:
+        target_size= os.path.getsize('../data/input/%s.jpg'%name)
+        if target_size>0:
+           
+            print 'Filename: %s exists, .....skippig: '%(name)
+            return 0
+        
+    
+   # counter = counter + 1
     
     img_name = '../data/resized/%s.jpg'%name
     print ('Complete Image path: '),(img_name)
@@ -43,3 +59,22 @@ for name in names:
 
     out_name = '../data/input/%s.jpg'%name
     ret = cv2.imwrite(out_name, res)
+    return 1
+ 
+
+
+       
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[0,1,2,3,4], number_of_data=[25810, 2443, 5292, 873, 708], LRB='both')
+        
+#for name in names: 
+ 
+
+pool_size = multiprocessing.cpu_count()
+
+pool = multiprocessing.Pool(processes=pool_size,initializer=start_process,
+                                maxtasksperchild=2)   
+
+pool_outputs = pool.map(worker, names)
+pool.close()
+pool.join()
+ 
