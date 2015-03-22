@@ -11,7 +11,7 @@ import multiprocessing
 import os
 
 def start_process():
-    print 'Starting', multiprocessing.current_process().name
+    print 'Starting in multi processing', multiprocessing.current_process().name
 
 def worker(name):
     print 'Worker'
@@ -61,20 +61,23 @@ def worker(name):
     ret = cv2.imwrite(out_name, res)
     return 1
  
+#choose the mode to run
+run_multiprocessor=0
 
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', 
+                labels_idx=[0,1,2,3,4], 
+                number_of_data=[25810, 2443, 5292, 873, 708], LRB='both')
 
-       
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[0,1,2,3,4], number_of_data=[25810, 2443, 5292, 873, 708], LRB='both')
-        
-#for name in names: 
- 
-
-pool_size = multiprocessing.cpu_count()*2
-
-pool = multiprocessing.Pool(processes=pool_size,initializer=start_process,
-                                maxtasksperchild=2)   
-
-pool_outputs = pool.map(worker, names)
-pool.close()
-pool.join()
+if run_multiprocessor:
+    pool_size = multiprocessing.cpu_count()*2
+    pool = multiprocessing.Pool(processes=pool_size,initializer=start_process,
+                                    maxtasksperchild=2)
+    pool_outputs = pool.map(worker, names)
+    pool.close()
+    pool.join()
+else:
+    for name in names:
+        print 'Starting in single processing'
+        worker(name)
+    
  
