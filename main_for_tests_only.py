@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #auto path loading in order to run easily from terminal
 import sys
+import matplotlib.image as mpimg
+
 sys.path.append('./ImageProcessing')
 sys.path.append('./DataCreation')
 import cv2
@@ -21,19 +23,19 @@ for i in range(names_labels[1].shape[0]):
         
 counter = 1
 for i in range(1):#range(names.shape[0]):
-     
+    name=names[i]
+    label=labels[i]
     
     print 'Processing image %d'%counter    
     counter = counter + 1
     
-    #name='95_right'
-    #name='621_right' #not solved
+    name='229_left' #not solved
 
     #name='456_left' 
     #name='363_right' 
 
-    img_name = '../data/resized/%s.jpg'%names[i]
-    img_name_temp = '../%s.jpg'%names[i]
+    img_name = '../data/resized/%s.jpg'%name
+    img_name_temp = '../%s.jpg'%name
     
     img = ImageProcessing.LoadImage(img_name)
 
@@ -41,18 +43,17 @@ for i in range(1):#range(names.shape[0]):
     
 
 
-    features, mask2 = ImageProcessing.DetectHE(g, silence=False)
+    #features, mask2 = ImageProcessing.DetectHE(g, silence=False)
     
-    cropped_image = ImageProcessing.CropImage(g, features, silence=True)
-    plt.figure()
-    plt.imshow(cropped_image, cmap = 'gray')
+    ImageProcessing.DetectMicroAN(g)
+    
+    #cropped_image = ImageProcessing.CropImage(g, features, silence=True)
+    
+    image = mpimg.imread(img_name)
+    plt.imshow(image)
     plt.show()
     
-    plt.figure()
-    plt.imshow(g, cmap = 'gray')
-    plt.show()
-    
-    print '--->Image Name:%s, Image label=%d '% (names[i],labels[i])
+    print '--->Image Name:%s, Image label=%d '% (name,label)
         
 '''
     g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)

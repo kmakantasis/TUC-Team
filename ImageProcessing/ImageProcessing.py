@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 import math
 import cv2
 
-def ImageRescale(im_r):   
+def ImageRescale(im_r, TARGET_MPIXELS=1e6):   
     height, width, depth = im_r.shape
     mpixels=height*width
-    TARGET_MPIXELS=1e6
     
     lin_scale=np.sqrt( float(mpixels/TARGET_MPIXELS) )
     if lin_scale<0.9 or lin_scale>1.1 : #avoid rescale if dimensions are close
@@ -611,13 +610,28 @@ def DetectHE(img, silence=True):
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
     if silence==False:  
         print ("Hist[0]=%3.3f" %hist[0])
-
+    #----histogram correction invariant to scale
+    height, width = img.shape
+    mpixels=height*width
+    print ("Hist mpixels=%3.3f" %mpixels)
+    
+    '''
     if (hist[0]<500000):
-        gamma= abs(550000-hist[0])/200000. +1
+        gamma= abs(550000-hist[0])/(200000) +1
+        img=GammaCorrection(img,gamma)
+    else:
+        gamma=1    
+
+    '''  
+        
+    if (hist[0]<mpixels/2.):
+        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1
         img=GammaCorrection(img,gamma)
     else:
         gamma=1
-    
+     
+       
+      
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
     if silence==False:  
         print ("After Gamma=%2.2f Hist[0]=%3.3f" %(gamma,hist[0]) )  
@@ -630,6 +644,119 @@ def DetectHE(img, silence=True):
     tophat, mask2 = FeaturesDetection(opening, total_mask, silence=silence) 
     
     return tophat, mask2
+
+def DetectMicroAN(img, EROD=5, CLO=4, OPEN=5, silence=False):
+    #Under heavy development
+    hist = cv2.calcHist([img],[0],None,[4],[0,256])
+    if silence==False:  
+        print ("Hist[0]=%3.3f" %hist[0])
+    #----histogram correction invariant to scale
+    height, width = img.shape
+    mpixels=height*width
+    print ("Hist mpixels=%3.3f" %mpixels)
+ 
+        
+    if (hist[0]<mpixels/2.):
+        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1
+        img=GammaCorrection(img,gamma)
+    else:
+        gamma=1
+        
+    ###-------------basic morphology
+    
+        
+    erode=closing=dilate=img
+    #Basic morphological operations
+    #Dilate: eliminates vessels
+    for i in range(1,EROD):
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+        erode =cv2.erode(img,kernel,iterations = 1)
+    
+    '''
+    kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    erode = cv2.morphologyEx(erode, cv2.MORPH_BLACKHAT, kernel)
+    '''
+     
+    #Gaussian filter
+    ''' 
+    for i in range(1,4):
+        erode = cv2.GaussianBlur(erode,(2*i+1,2*i+1),3) 
+    ''' 
+    #canny edge
+
+    '''   
+    #laplacian filter
+    #erode = cv2.Laplacian(erode,cv2.CV_64F)
+    sobelx = cv2.Sobel(erode,cv2.CV_64F,1,0,ksize=5)
+    
+    plt.figure()
+    plt.title("sobelx")
+    plt.imshow(sobelx, cmap = 'gray')
+    plt.show() 
+    
+    sobely = cv2.Sobel(erode,cv2.CV_64F,0,1,ksize=5)
+    
+    plt.figure()
+    plt.title("sobely")
+    plt.imshow(sobely, cmap = 'gray')
+    plt.show()     
+   
+
+    edges = cv2.Canny(sobelx,170,170)    
+    plt.figure()
+    plt.title("Canny edges")
+    plt.imshow(edges, cmap = 'gray')
+    plt.show()
+    
+'''    
+    #Gradient filter
+    ''' 
+    for i in range(1,2):
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
+        erode = cv2.morphologyEx(erode, cv2.MORPH_GRADIENT, kernel)
+    '''
+    #erode=cv2.equalizeHist(erode)
+    '''
+    # Tophat
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(120,120))
+    erode = cv2.morphologyEx(erode, cv2.MORPH_TOPHAT, kernel)
+    '''
+    #ret,erode = cv2.threshold(erode,100,127,cv2.THRESH_BINARY)  
+    
+    plt.figure()
+    plt.title("MicroAN erode")
+    plt.imshow(erode, cmap = 'gray')
+    plt.show() 
+ 
+    '''   
+    #closing  
+    closing=dilate
+    for i in range(1,CLO):
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i*3,1+i*3))
+        closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=1)
+    ''' 
+
+               
+    #opening
+    for i in range(1,OPEN):
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+        opening = cv2.morphologyEx(erode, cv2.MORPH_OPEN, kernel)
+    
+   
+    plt.figure()
+    plt.title("MicroAN openig")
+    plt.imshow(opening, cmap = 'gray')
+    plt.show()    
+        
+    ##- end basic morphology
+       
+   
+            
+    #circular_mask, fill_mask, circular_inv, total_mask = CircularDetectMasking(img, opening, silence=silence)
+
+    #tophat, mask2 = FeaturesDetection(opening, total_mask, silence=silence) 
+    
+    return 1
     
 
 def CropImage(img, features, silence=True):
