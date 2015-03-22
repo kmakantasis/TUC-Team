@@ -8,11 +8,10 @@ import theano.tensor as T
 import CNNLoadData
 import ConvPoolLayer
 import MultiLayerPerceptron
-import LogisticLayer
 import LoadData
 
 
-def test_cnn(names, labels, learning_rate=0.05, L_reg=0.005, n_epochs=200, nkerns=[3, 6, 12, 24, 48], batch_size=50):
+def test_cnn(names, labels, learning_rate=0.05, L_reg=0.005, n_epochs=70, nkerns=[3, 6, 12, 24, 48], batch_size=50):
     
     # Load dataset
     datasets = CNNLoadData.LoadData(names, labels, ratio=0.80)
@@ -176,6 +175,9 @@ def test_cnn(names, labels, learning_rate=0.05, L_reg=0.005, n_epochs=200, nkern
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
+                          
+    return params
+    
 
 if __name__ == '__main__':
     
@@ -188,4 +190,44 @@ if __name__ == '__main__':
         
     names_input = np.reshape(names_input, (2000, ))
    
-    test_cnn(names_input, labels_0_1)
+    params = test_cnn(names_input, labels_0_1)
+    
+    save_weights=False
+    
+    if save_weights == True:
+        import scipy.io as sio
+        
+        d = {}
+        
+        d['layer0_w'] = params[12].eval()
+        d['layer0_b'] = params[13].eval()
+        d['layer1_w'] = params[10].eval()
+        d['layer1_b'] = params[11].eval()
+        d['layer2_w'] = params[8].eval()
+        d['layer2_b'] = params[9].eval()
+        d['layer3_w'] = params[6].eval()
+        d['layer3_b'] = params[7].eval()
+        d['layer4_w'] = params[4].eval()
+        d['layer4_b'] = params[5].eval()
+        
+        sio.savemat('weights.mat', d)
+        
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
