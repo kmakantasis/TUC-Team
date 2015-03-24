@@ -191,7 +191,7 @@ if __name__ == '__main__':
     LRB_names = []
     LRB_labels = []
     
-    class_0_max = 5000
+    class_0_max = 2000
     class_0_members = 0
     
     for i in range(names_input.shape[0]):
@@ -217,6 +217,8 @@ if __name__ == '__main__':
     rand_perm = np.random.permutation(len(LRB_labels))
     names_input_left = names_input_left[rand_perm]
     labels_input_left = labels_input_left[rand_perm]
+    
+    del labels_input, LRB_labels, LRB_names, names_input, rand_perm
     
     #print 'Test set ratio: %f'% np.mean(labels_0_1[6154:])
    
