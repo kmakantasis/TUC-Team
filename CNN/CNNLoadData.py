@@ -13,7 +13,7 @@ def LoadData(names, labels, ratio=0.8):
     dataset_y = np.zeros((names.shape[0]))
 
     for i in range(names.shape[0]):
-        img_name = '../data/input/%s.jpg'%names[i]
+        img_name = '../../data/input_train/%s.jpg'%names[i]
         img = cv2.imread(img_name, 0)
         ret,thresh = cv2.threshold(img,1,1,cv2.THRESH_BINARY)
         img_flat = np.reshape(thresh, (1, -1))
@@ -55,7 +55,7 @@ def FeatureConstructionData(names, labels):
     dataset_y = np.zeros((names.shape[0]))
 
     for i in range(names.shape[0]):
-        img_name = '../data/input/%s.jpg'%names[i]
+        img_name = '../data/input_train/%s.jpg'%names[i]
         img = cv2.imread(img_name, 0)
         ret,thresh = cv2.threshold(img,1,1,cv2.THRESH_BINARY)
         img_flat = np.reshape(thresh, (1, -1))

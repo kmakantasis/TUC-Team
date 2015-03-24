@@ -26,9 +26,9 @@ def worker(name):
    # print  'Image Label: %f'%labels[counter-1]
     
    
-    is_file=os.path.isfile('../data/input_train/%s.jpg'%name)
+    is_file=os.path.isfile('../data/input_test/%s.jpg'%name)
     if is_file==1:
-        target_size= os.path.getsize('../data/input_train/%s.jpg'%name)
+        target_size= os.path.getsize('../data/input_test/%s.jpg'%name)
         if target_size>0:
            
             print 'Filename: %s exists, .....skippig: '%(name)
@@ -37,7 +37,7 @@ def worker(name):
     
    # counter = counter + 1
     
-    img_name = '../data/train_resized/%s.jpg'%name
+    img_name = '../data/test_resized/%s.jpg'%name
     print ('Complete Image path: '),(img_name)
     
     img = ImageProcessing.LoadImage(img_name)
@@ -57,17 +57,20 @@ def worker(name):
 
     res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
 
-    out_name = '../data/input_train/%s.jpg'%name
+    out_name = '../data/input_test/%s.jpg'%name
     ret = cv2.imwrite(out_name, res)
     return 1
  
 #choose the mode to run
 run_multiprocessor=0
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', 
-                labels_idx=[0,1,2,3,4], 
-                number_of_data=[25810, 2443, 5292, 873, 708], LRB='both')
 
+files = [f.split('.')[0] for f in os.listdir('../data/test_resized')]
+
+#names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', 
+#                labels_idx=[0,1,2,3,4], 
+#                number_of_data=[25810, 2443, 5292, 873, 708], LRB='both')
+names=np.asarray(files)
 if run_multiprocessor:
     pool_size = multiprocessing.cpu_count()*2
     pool = multiprocessing.Pool(processes=pool_size,initializer=start_process,

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+
+
 import numpy as np
 import time
 import sys
+sys.path.append('../DataCreation')
 import os
 import theano
 import theano.tensor as T
@@ -11,7 +14,7 @@ import MultiLayerPerceptron
 import LoadData
 
 
-def test_cnn(names, labels, learning_rate=0.05, L_reg=0.0, n_epochs=70, nkerns=[3, 6, 12, 24, 48], batch_size=50):
+def test_cnn(names, labels, learning_rate=0.05, L_reg=0.0001, n_epochs=70, nkerns=[3, 6, 12, 24, 48], batch_size=100):
     
     # Load dataset
     datasets = CNNLoadData.LoadData(names, labels, ratio=0.80)
@@ -64,7 +67,7 @@ def test_cnn(names, labels, learning_rate=0.05, L_reg=0.0, n_epochs=70, nkerns=[
                                       layer4.output.flatten(2),
                                       nkerns[4] * 4 * 4,
                                       96,
-                                      2)
+                                      5)
                             
 #    layer5 = MultiLayerPerceptron.HiddenLayer(rng, 
 #                                      layer4.output.flatten(2),
@@ -181,12 +184,14 @@ def test_cnn(names, labels, learning_rate=0.05, L_reg=0.0, n_epochs=70, nkerns=[
 
 if __name__ == '__main__':
     
-    names_input, labels_input = LoadData.InputDataset(csv_name='../CSV/trainLabels.csv', input_folder='../data/input_total')
+    names_input, labels_input = LoadData.InputDataset(csv_name='../CSV/trainLabels.csv', input_folder='../../data/input_train')
+
+    print 'Names loaded...'    
     
     LRB_names = []
     LRB_labels = []
     
-    class_0_max = 3000
+    class_0_max = 5000
     class_0_members = 0
     
     for i in range(names_input.shape[0]):
@@ -195,27 +200,27 @@ if __name__ == '__main__':
                 LRB_names.append(names_input[i][0])
                 LRB_labels.append(labels_input[i][0])
                 class_0_members = class_0_members + 1
-            if labels_input[i][0] != 0 and labels_input[i][0] != 1:
+            if labels_input[i][0] != 0:# and labels_input[i][0] != 1:
                 LRB_names.append(names_input[i][0])
                 LRB_labels.append(labels_input[i][0])
                 
     names_input_left = np.asarray(LRB_names)
     labels_input_left = np.asarray(LRB_labels)    
 
-    labels_0_1 = np.zeros((len(LRB_labels),))
-    for i in range(labels_input_left.shape[0]):
-        if labels_input_left[i] > 1:
-            labels_0_1[i] = 1.0
+#    labels_0_1 = np.zeros((len(LRB_labels),))
+#    for i in range(labels_input_left.shape[0]):
+#        if labels_input_left[i] > 1:
+#            labels_0_1[i] = 1.0
         
     #names_input_left = np.reshape(names_input_left, (len(LRB_labels), ))
     
     rand_perm = np.random.permutation(len(LRB_labels))
     names_input_left = names_input_left[rand_perm]
-    labels_0_1 = labels_0_1[rand_perm]
+    labels_input_left = labels_input_left[rand_perm]
     
     #print 'Test set ratio: %f'% np.mean(labels_0_1[6154:])
    
-    params = test_cnn(names_input_left, labels_0_1)
+    params = test_cnn(names_input_left, labels_input_left)
     
     save_weights=True
     
@@ -235,5 +240,5 @@ if __name__ == '__main__':
         d['layer4_w'] = params[4].eval()
         d['layer4_b'] = params[5].eval()
         
-        sio.savemat('weights_70_total.mat', d)
+        sio.savemat('weights_70_total_left.mat', d)
                

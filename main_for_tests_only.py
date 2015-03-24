@@ -30,7 +30,7 @@ for i in range(1):#range(names.shape[0]):
     counter = counter + 1
     
     #name='229_left' #not solved
-    name='16_right'
+    #name='16_right'
 
     #name='456_left' 
     #name='363_right' 
@@ -43,10 +43,10 @@ for i in range(1):#range(names.shape[0]):
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
     
 
-    #features, mask2 = ImageProcessing.DetectHE(g, gamma_offet=0, silence=False)
+    features, mask2 = ImageProcessing.DetectHE(g, gamma_offet=0, silence=False)
 
     
-    ImageProcessing.DetectMicroAN(g)
+    #ImageProcessing.DetectMicroAN(g)
     
     #cropped_image = ImageProcessing.CropImage(g, features, silence=True)
     
