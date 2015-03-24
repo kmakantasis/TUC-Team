@@ -11,7 +11,7 @@ import ImageProcessing
 import LoadData
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[2,1], number_of_data=[30,30], LRB='both')
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[2,4], number_of_data=[30,30], LRB='both')
 
 names_labels= (names, labels )
 
@@ -29,12 +29,13 @@ for i in range(1):#range(names.shape[0]):
     print 'Processing image %d'%counter    
     counter = counter + 1
     
-    name='229_left' #not solved
+    #name='229_left' #not solved
+    name='16_right'
 
     #name='456_left' 
     #name='363_right' 
 
-    img_name = '../data/resized/%s.jpg'%name
+    img_name = '../data/train_resized/%s.jpg'%name
     img_name_temp = '../%s.jpg'%name
     
     img = ImageProcessing.LoadImage(img_name)
@@ -42,12 +43,14 @@ for i in range(1):#range(names.shape[0]):
     r,g,b = ImageProcessing.SplitImage(img, silence=True)
     
 
+    #features, mask2 = ImageProcessing.DetectHE(g, gamma_offet=0, silence=False)
 
-    #features, mask2 = ImageProcessing.DetectHE(g, silence=False)
     
     ImageProcessing.DetectMicroAN(g)
     
     #cropped_image = ImageProcessing.CropImage(g, features, silence=True)
+    
+    #ImageProcessing.TriangularMasking()
     
     image = mpimg.imread(img_name)
     plt.imshow(image)

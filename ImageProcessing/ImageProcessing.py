@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import math
 import cv2
 
+
 def ImageRescale(im_r, TARGET_MPIXELS=1e6):   
     height, width, depth = im_r.shape
     mpixels=height*width
@@ -520,6 +521,16 @@ def CircularDetectMasking(img, opening, silence=True):
         
         
     return circular_mask, fill_mask, circular_inv, total_mask
+
+def TriangularMasking():
+    """            
+    Function definition
+    +++++++++++++++++++
+            
+        .. py:function::
+        
+    """
+  
     
     
 def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
@@ -606,7 +617,7 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
     return tophat, mask2
     
     
-def DetectHE(img, silence=True):
+def DetectHE(img, gamma_offet=0, silence=True):
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
     if silence==False:  
         print ("Hist[0]=%3.3f" %hist[0])
@@ -625,10 +636,11 @@ def DetectHE(img, silence=True):
     '''  
         
     if (hist[0]<mpixels/2.):
-        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1
-        img=GammaCorrection(img,gamma)
+        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1 + gamma_offet
+        img= GammaCorrection(img,gamma)
     else:
-        gamma=1
+        gamma=1 + gamma_offet
+        img= GammaCorrection(img,gamma)
      
        
       
@@ -645,8 +657,9 @@ def DetectHE(img, silence=True):
     
     return tophat, mask2
 
-def DetectMicroAN(img, EROD=5, CLO=4, OPEN=5, silence=False):
+def DetectMicroAN(img, EROD=4, CLO=4, OPEN=5, silence=False):
     #Under heavy development
+    '''
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
     if silence==False:  
         print ("Hist[0]=%3.3f" %hist[0])
@@ -661,30 +674,55 @@ def DetectMicroAN(img, EROD=5, CLO=4, OPEN=5, silence=False):
         img=GammaCorrection(img,gamma)
     else:
         gamma=1
-        
+    '''    
     ###-------------basic morphology
     
         
     erode=closing=dilate=img
     #Basic morphological operations
-    #Dilate: eliminates vessels
+    
+    #erode
     for i in range(1,EROD):
         kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
         erode =cv2.erode(img,kernel,iterations = 1)
+   
+    erode=255-erode
     
-    '''
+    plt.figure()
+    plt.title("MicroAN erode")
+    plt.imshow(erode, cmap = 'gray')
+    plt.show()     
+        
+    '''   
+    #blackhat
     kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
     erode = cv2.morphologyEx(erode, cv2.MORPH_BLACKHAT, kernel)
+    plt.figure()
+    plt.title("MicroAN Blackhat")
+    plt.imshow(erode, cmap = 'gray')
+    plt.show()       
     '''
+  
+        
+    '''    
+    #otsu
+    ret, erode = cv2.threshold( erode,40,127,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    plt.figure()
+    plt.title('Otshu Image')
+    plt.imshow(erode ,cmap = 'gray')
+    plt.show()  
+    '''
+        
+
      
     #Gaussian filter
     ''' 
     for i in range(1,4):
         erode = cv2.GaussianBlur(erode,(2*i+1,2*i+1),3) 
     ''' 
-    #canny edge
 
-    '''   
+
+    ''' 
     #laplacian filter
     #erode = cv2.Laplacian(erode,cv2.CV_64F)
     sobelx = cv2.Sobel(erode,cv2.CV_64F,1,0,ksize=5)
@@ -700,15 +738,17 @@ def DetectMicroAN(img, EROD=5, CLO=4, OPEN=5, silence=False):
     plt.title("sobely")
     plt.imshow(sobely, cmap = 'gray')
     plt.show()     
-   
-
-    edges = cv2.Canny(sobelx,170,170)    
+    '''
+    
+    #canny edge
+    edges = cv2.Canny(erode,170,170)    
     plt.figure()
     plt.title("Canny edges")
     plt.imshow(edges, cmap = 'gray')
     plt.show()
     
-'''    
+    
+  
     #Gradient filter
     ''' 
     for i in range(1,2):
@@ -722,11 +762,7 @@ def DetectMicroAN(img, EROD=5, CLO=4, OPEN=5, silence=False):
     erode = cv2.morphologyEx(erode, cv2.MORPH_TOPHAT, kernel)
     '''
     #ret,erode = cv2.threshold(erode,100,127,cv2.THRESH_BINARY)  
-    
-    plt.figure()
-    plt.title("MicroAN erode")
-    plt.imshow(erode, cmap = 'gray')
-    plt.show() 
+
  
     '''   
     #closing  
