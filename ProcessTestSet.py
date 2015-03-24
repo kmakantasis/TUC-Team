@@ -62,7 +62,7 @@ def worker(name):
     return 1
  
 #choose the mode to run
-run_multiprocessor=0
+run_multiprocessor=1
 
 
 files = [f.split('.')[0] for f in os.listdir('../data/test_resized')]
