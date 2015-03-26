@@ -43,7 +43,7 @@ def CNTRule_Area(cnt, MIN_THRESHOLD, MAX_THRESHOLD):
     return MIN_THRESHOLD< cv2.contourArea(cnt) and cv2.contourArea(cnt) < MAX_THRESHOLD
     
 def CNTRule_AspectRatio(c):
-    ASPECT_RATIO=3
+    ASPECT_RATIO=4
     x,y,w,h = cv2.boundingRect(c)
     aspect_ratio = float(w)/h
     

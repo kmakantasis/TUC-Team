@@ -447,7 +447,7 @@ def CircularDetectMasking(img, opening, silence=True):
 
     
     
-def FeaturesDetection(img, total_mask, TP_MASK=True, silence=True):
+def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
     """            
     Function definition
     +++++++++++++++++++
@@ -464,6 +464,9 @@ def FeaturesDetection(img, total_mask, TP_MASK=True, silence=True):
                
             :rtype: tophat, mask2 - two two dimensional numpy arrays corresponding to features. 
     """
+    if EQ:
+        img = cv2.equalizeHist(img)
+        
     if silence==False: ImU.PrintImg(img,'before tophat')
        
         
@@ -577,8 +580,8 @@ def DetectHE(img, gamma_offset=0, silence=True):
             
     circular_mask, fill_mask, circular_inv, total_mask = CircularDetectMasking(img, opening, silence=silence)
 
-    tophat, mask2 = FeaturesDetection(dilate, total_mask, silence=False) #default=opening
-    
+    tophat, mask2 = FeaturesDetection(dilate, total_mask, EQ=False, silence=False) #default=opening
+    tophat, mask2 = FeaturesDetection(dilate, total_mask, EQ=True,  silence=False)
     return tophat, mask2
 
     

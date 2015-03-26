@@ -35,7 +35,11 @@ for i in range(1):#range(names.shape[0]):
 
     #name='456_left' 
     #name='1430_left'
-    name='11031_right' #HE
+    #name='11031_right' #HE done
+    #name ='10321_left' #HE not done
+    #name ='19116_right' #done
+
+
 
 
     img_name = '../data/train_resized/%s.jpg'%name
@@ -51,7 +55,8 @@ for i in range(1):#range(names.shape[0]):
     
     gray=numpy.uint8(gray)
      
-    features, mask2 = ImageProcessing.DetectHE(gray, gamma_offset=-0.6, silence=True)
+    features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
+    #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
 
     #ImageProcessing.DetectMicroAN(g)
     
