@@ -23,8 +23,14 @@ def Erode(img, EROD=2, silence=True):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
     erode = cv2.erode(img,kernel,iterations = EROD)
         
-    return erode    
+    return erode
     
+def Closing(img, CLO=2, silence=True):
+    closing=img
+    for i in range(1,CLO):
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i*3,1+i*3))
+        closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=1)
+    return closing
     
 def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     """            
@@ -217,7 +223,8 @@ def DetectHE(img, gamma_offset=0, silence=True):
 def DetectVessels(img, gamma_offset=0, silence=True):
     
     img=HistAdjust(img, gamma_offset=0, silence=True)
-     
+    
+    #only for mask
     dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=4, silence=silence)
             
     circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=silence)
@@ -230,11 +237,15 @@ def DetectVessels(img, gamma_offset=0, silence=True):
     #tophat
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
     tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
-  
-
+    
+    #closing
+    #tophat= Closing(tophat, CLO=6, silence=True)
+    kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=3)
+   
     if silence==False: ImU.PrintImg(tophat,'after tophat')
     #threshold
-    ret,thresh = cv2.threshold(tophat,25,200,cv2.THRESH_BINARY)
+    ret,thresh = cv2.threshold(tophat,10,40,cv2.THRESH_BINARY)
     
     if silence==False: ImU.PrintImg(thresh,'tophat & threshold')    
     
