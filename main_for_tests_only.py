@@ -51,10 +51,8 @@ for i in range(1):#range(names.shape[0]):
     
     gray=numpy.uint8(gray)
      
-
     features, mask2 = ImageProcessing.DetectHE(gray, gamma_offset=-0.6, silence=True)
 
-    
     #ImageProcessing.DetectMicroAN(g)
     
     #cropped_image = ImageProcessing.CropImage(g, features, silence=True)

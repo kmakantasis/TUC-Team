@@ -27,7 +27,7 @@ def CNTRule_Sphericity(cnt,accept_ratio=0.7):
     
     return cnt_area_ratio<accept_ratio
  
-def CNTRule_OutCircular(img,cnt):
+def CNTRule_KickOutCircular(img,cnt):
     img_h, img_w = img.shape
     centroid_x, centroid_y=CNTCentroid(cnt)
     
@@ -38,7 +38,16 @@ def CNTRule_OutCircular(img,cnt):
     distance_from_center= math.sqrt( (centroid_x-eye_center_x)**2 + (centroid_y-eye_center_y)**2)
     
     return distance_from_center< eye_r
-
+    
+def CNTRule_Area(cnt, MIN_THRESHOLD, MAX_THRESHOLD):
+    return MIN_THRESHOLD< cv2.contourArea(cnt) and cv2.contourArea(cnt) < MAX_THRESHOLD
+    
+def CNTRule_AspectRatio(c):
+    ASPECT_RATIO=3
+    x,y,w,h = cv2.boundingRect(c)
+    aspect_ratio = float(w)/h
+    
+    return (aspect_ratio>(1./ASPECT_RATIO) and aspect_ratio<ASPECT_RATIO)  
 
 
 

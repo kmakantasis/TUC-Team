@@ -143,7 +143,7 @@ def Global_LR_Gradient(g, silence=False):
     
     if (hist[0]<500000):
         gamma= abs(550000-hist[0])/250000. +1
-        img_g=GammaCorrection(g,gamma)
+        img_g=ImU.GammaCorrection(g,gamma)
     else:
         img_g=g
         gamma=1
@@ -227,8 +227,8 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     g, g_opening, closing=BasicMorphology(g, DIL=3, CLO=4, silence=True)
     dilate, opening, r=BasicMorphology(r, DIL=5, CLO=4, silence=True)
     
-    r=GammaCorrection(r,.8)
-    g=GammaCorrection(g,.8)    
+    r=ImU.GammaCorrection(r,.8)
+    g=ImU.GammaCorrection(g,.8)    
 
      
     # Detect the two discs
@@ -337,23 +337,7 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     return rot_g, white_disc_xy ,  dark_disc_xy  #return green channel rotated, and coordinates
 
 
-def GammaCorrection(img, correction):
-    """            
-    Function definition
-    +++++++++++++++++++
-            
-        .. py:function:: GammaCorrection(img, correction)
 
-            Apply gamma correction on input image.
-            
-            :param uint8 img: grayscale image to be gamma corrected.
-            :param float correction: gamma value.
-               
-            :rtype: uint8 img - two dimensional uint8 numpy array corresponding to gamma corrected image. 
-    """
-    img = img/255.0
-    img = cv2.pow(img, correction)
-    return np.uint8(img*255)
     
     
 def BasicMorphology(img, DIL=5, CLO=4, silence=True):
@@ -432,7 +416,7 @@ def CircularDetectMasking(img, opening, silence=True):
     circular =255-(thresh-erode_thres)
     circular_inv=(thresh-erode_thres)
     #Mask GammaCorrection...maybe median could work
-    open_for_mask = GammaCorrection(opening,3)#cv2.morphologyEx(opening, cv2.MORPH_OPEN, kernel)
+    open_for_mask = ImU.GammaCorrection(opening,3)#cv2.morphologyEx(opening, cv2.MORPH_OPEN, kernel)
     fill_mask =   ndimage.binary_fill_holes(open_for_mask)
     #fill_mask  =fill/fill.circular.max()
     circular_mask = circular/circular.max()  #convert to binary  
@@ -460,17 +444,7 @@ def CircularDetectMasking(img, opening, silence=True):
         
     return circular_mask, fill_mask, circular_inv, total_mask
 
-def TriangularMasking():
-    """            
-    Function definition
-    +++++++++++++++++++
-            
-        .. py:function::
-        
-    """
-    #Conour Processing should be a seperate Folder
-    #Methods starting with CNT declare contour property extractio
-    #Methods starting with CNTRule declare reject rule
+
     
     
 def FeaturesDetection(img, total_mask, TP_MASK=True, silence=True):
@@ -507,8 +481,7 @@ def FeaturesDetection(img, total_mask, TP_MASK=True, silence=True):
     #thresh_test
     #ret, thresh_test = cv2.threshold( img,0,253,cv2.THRESH_BINARY) 
     
-  
-    
+     
     if TP_MASK==True:
         thresh= np.array(thresh*total_mask, dtype="uint8")       
     
@@ -522,57 +495,34 @@ def FeaturesDetection(img, total_mask, TP_MASK=True, silence=True):
     
     # We sort and discard possible noisy features/artifacts
     img_height, img_width = img.shape
- 
-    
     mask2 = np.ones(thresh.shape[:2], dtype="uint8") * 255
-    quality_meter=0
-    total_mass=0
-    quality_mass=0
-    #-----------------parameters----------------
-    AREA_REJECT_A=1200
-    AREA_REJECT_B=500
-    ASPECT_RATIO=3
-    #----------------end parameters-------------
+
     
     for c in cnt :
-        #CNTRule_Sphericity(c)
-        x,y,w,h = cv2.boundingRect(c)
-        aspect_ratio = float(w)/h
-        total_mass= total_mass + cv2.contourArea(c)
-        # if the contour is not bad, draw it on the mask
+          
         #-----we should put our rules here
-        accept_contour=False
+        Rules_Passed=False
         
-        accept_1 = CntP.CNTRule_OutCircular(img,c)
-        accept_2 = CntP.CNTRule_Sphericity(c)
+        rule0 = CntP.CNTRule_Area(c, 10, 1200)
+        rule1 = CntP.CNTRule_KickOutCircular(img,c)
+        rule2 =1# CntP.CNTRule_Sphericity(c)
+        rule3 = CntP.CNTRule_AspectRatio(c)
         
-        accept_contour= accept_1 and accept_2
+        Rules_Passed= rule0 and rule1 and rule2 and rule3
             
-        if accept_contour and cv2.contourArea(c)<AREA_REJECT_A: #kick out very large artifacts
-            if  cv2.contourArea(c)>AREA_REJECT_B: #only for large artifacts check ratio
-                if  (aspect_ratio>(1./ASPECT_RATIO) and aspect_ratio<ASPECT_RATIO) :
-                    cv2.drawContours(mask2, [c], -1, 0, -1)
-                    quality_meter=quality_meter+1
-                    quality_mass= quality_mass+ cv2.contourArea(c)
-            else:
-                cv2.drawContours(mask2, [c], -1, 0, -1)
-                quality_meter=quality_meter+1
-                quality_mass= quality_mass+ cv2.contourArea(c)
-                
-                
+        if Rules_Passed : #kick out very large artifacts
+            cv2.drawContours(mask2, [c], -1, 0, -1)
+                             
             
-    quality_percent = float(quality_meter)/ (len(cnt)+1)
-    quality_mass_percent  =  float(quality_mass)/ (total_mass+1)
+    #quality_percent = float(quality_meter)/ (len(cnt)+1)
+   # quality_mass_percent  =  float(quality_mass)/ (total_mass+1)
 
 
     mask2=1- mask2/mask2.max()  
     tophat= tophat*mask2 
-  
-    if silence==False: 
-        plt.figure()
-        plt.title('contour filterdd image')
-        plt.imshow(tophat, cmap = 'gray')
-        plt.show() 
+    
+    if silence==False: ImU.PrintImg(tophat,'contour filtered image')
+ 
         
     if silence==True:  
         titles = ['Refined Contour mask', 'Refined Tophat']
@@ -587,9 +537,7 @@ def FeaturesDetection(img, total_mask, TP_MASK=True, silence=True):
         
         plt.show()
        
-        print ("Imaging quality (count)=%.2f (large is good)" %quality_percent)
-        print ("Imaging quality (area) =%.2f (large is good)" %quality_mass_percent)
-       
+        
     return tophat, mask2
     
     
@@ -605,7 +553,7 @@ def DetectHE(img, gamma_offset=0, silence=True):
     '''
     if (hist[0]<500000):
         gamma= abs(550000-hist[0])/(200000) +1
-        img=GammaCorrection(img,gamma)
+        img=ImU.GammaCorrection(img,gamma)
     else:
         gamma=1    
 
@@ -613,10 +561,10 @@ def DetectHE(img, gamma_offset=0, silence=True):
         
     if (hist[0]<mpixels/2.):
         gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1 + gamma_offset
-        img= GammaCorrection(img,gamma)
+        img= ImU.GammaCorrection(img,gamma)
     else:
         gamma=1 + gamma_offset
-        img= GammaCorrection(img,gamma)
+        img= ImU.GammaCorrection(img,gamma)
      
        
       
@@ -633,142 +581,6 @@ def DetectHE(img, gamma_offset=0, silence=True):
     
     return tophat, mask2
 
-def DetectMicroAN(img, EROD=4, CLO=4, OPEN=5, silence=False):
-    #Under heavy development
-    '''
-    hist = cv2.calcHist([img],[0],None,[4],[0,256])
-    if silence==False:  
-        print ("Hist[0]=%3.3f" %hist[0])
-    #----histogram correction invariant to scale
-    height, width = img.shape
-    mpixels=height*width
-    print ("Hist mpixels=%3.3f" %mpixels)
- 
-        
-    if (hist[0]<mpixels/2.):
-        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1
-        img=GammaCorrection(img,gamma)
-    else:
-        gamma=1
-    '''    
-    ###-------------basic morphology
-    
-        
-    erode=closing=dilate=img
-    #Basic morphological operations
-    
-    #erode
-    for i in range(1,EROD):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-        erode =cv2.erode(img,kernel,iterations = 1)
-   
-    erode=255-erode
-    
-    plt.figure()
-    plt.title("MicroAN erode")
-    plt.imshow(erode, cmap = 'gray')
-    plt.show()     
-        
-    '''   
-    #blackhat
-    kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    erode = cv2.morphologyEx(erode, cv2.MORPH_BLACKHAT, kernel)
-    plt.figure()
-    plt.title("MicroAN Blackhat")
-    plt.imshow(erode, cmap = 'gray')
-    plt.show()       
-    '''
-  
-        
-    '''    
-    #otsu
-    ret, erode = cv2.threshold( erode,40,127,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    plt.figure()
-    plt.title('Otshu Image')
-    plt.imshow(erode ,cmap = 'gray')
-    plt.show()  
-    '''
-        
-
-     
-    #Gaussian filter
-    ''' 
-    for i in range(1,4):
-        erode = cv2.GaussianBlur(erode,(2*i+1,2*i+1),3) 
-    ''' 
-
-
-    ''' 
-    #laplacian filter
-    #erode = cv2.Laplacian(erode,cv2.CV_64F)
-    sobelx = cv2.Sobel(erode,cv2.CV_64F,1,0,ksize=5)
-    
-    plt.figure()
-    plt.title("sobelx")
-    plt.imshow(sobelx, cmap = 'gray')
-    plt.show() 
-    
-    sobely = cv2.Sobel(erode,cv2.CV_64F,0,1,ksize=5)
-    
-    plt.figure()
-    plt.title("sobely")
-    plt.imshow(sobely, cmap = 'gray')
-    plt.show()     
-    '''
-    
-    #canny edge
-    edges = cv2.Canny(erode,170,170)    
-    plt.figure()
-    plt.title("Canny edges")
-    plt.imshow(edges, cmap = 'gray')
-    plt.show()
-    
-    
-  
-    #Gradient filter
-    ''' 
-    for i in range(1,2):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
-        erode = cv2.morphologyEx(erode, cv2.MORPH_GRADIENT, kernel)
-    '''
-    #erode=cv2.equalizeHist(erode)
-    '''
-    # Tophat
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(120,120))
-    erode = cv2.morphologyEx(erode, cv2.MORPH_TOPHAT, kernel)
-    '''
-    #ret,erode = cv2.threshold(erode,100,127,cv2.THRESH_BINARY)  
-
- 
-    '''   
-    #closing  
-    closing=dilate
-    for i in range(1,CLO):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i*3,1+i*3))
-        closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=1)
-    ''' 
-
-               
-    #opening
-    for i in range(1,OPEN):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-        opening = cv2.morphologyEx(erode, cv2.MORPH_OPEN, kernel)
-    
-   
-    plt.figure()
-    plt.title("MicroAN openig")
-    plt.imshow(opening, cmap = 'gray')
-    plt.show()    
-        
-    ##- end basic morphology
-       
-   
-            
-    #circular_mask, fill_mask, circular_inv, total_mask = CircularDetectMasking(img, opening, silence=silence)
-
-    #tophat, mask2 = FeaturesDetection(opening, total_mask, silence=silence) 
-    
-    return 1
     
 
 def CropImage(img, features, silence=True):
