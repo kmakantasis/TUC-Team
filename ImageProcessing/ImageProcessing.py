@@ -223,6 +223,7 @@ def DetectHE(img, gamma_offset=0, silence=True):
 def DetectVessels(img, gamma_offset=0, silence=True):
     
     img=HistAdjust(img, gamma_offset=0, silence=True)
+    img=ImU.GammaCorrection(img,0.7)
     
     #only for mask
     dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=4, silence=silence)
@@ -234,18 +235,20 @@ def DetectVessels(img, gamma_offset=0, silence=True):
     
     img=255-erode
     
+
     #tophat
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
     tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
     
+    
     #closing
     #tophat= Closing(tophat, CLO=6, silence=True)
     kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=3)
+    closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=4)
    
     if silence==False: ImU.PrintImg(tophat,'after tophat')
     #threshold
-    ret,thresh = cv2.threshold(tophat,10,40,cv2.THRESH_BINARY)
+    ret,thresh = cv2.threshold(tophat,5,40,cv2.THRESH_BINARY)
     
     if silence==False: ImU.PrintImg(thresh,'tophat & threshold')    
     

@@ -40,7 +40,7 @@ for i in range(1):#range(names.shape[0]):
     #name ='10321_left' #HE not done
     #name ='19116_right' #done
 
-    name ='9951_right'
+    #name ='9951_right'
 
 
     img_name = '../data/train_resized/%s.jpg'%name
