@@ -551,7 +551,7 @@ def CNTRule_Sphericity(cnt,accept_ratio=0.7):
     cnt_area= cv2.contourArea(cnt)
     
     cnt_area_ratio = cnt_area/min_circle_area
-          
+    
     return cnt_area_ratio<accept_ratio
  
 def CNTRule_OutCircular(img,cnt):
@@ -560,11 +560,10 @@ def CNTRule_OutCircular(img,cnt):
     
     eye_center_x= int(img_w/2)
     eye_center_y= int(img_h/2)
-    eye_r= int(img_h/2)-0.1*img_h
+    eye_r= int(img_h/2)-0.08*img_h
     
     distance_from_center= math.sqrt( (centroid_x-eye_center_x)**2 + (centroid_y-eye_center_y)**2)
     
-
     return distance_from_center< eye_r
     
     
@@ -589,6 +588,11 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
     tophat = cv2.morphologyEx(opening, cv2.MORPH_TOPHAT, kernel)
     
     ret,thresh = cv2.threshold(tophat,30,100,cv2.THRESH_BINARY)  
+    if silence==False: 
+        plt.figure()
+        plt.title('thresholded image')
+        plt.imshow(thresh, cmap = 'gray')
+        plt.show()    
     
     if TP_MASK==True:
         thresh= np.array(thresh*total_mask, dtype="uint8")       
@@ -623,8 +627,11 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
         # if the contour is not bad, draw it on the mask
         #-----we should put our rules here
         accept_contour=False
-        if CNTRule_OutCircular(opening,c): accept_contour=True
- 
+        
+        accept_1 = CNTRule_OutCircular(opening,c)
+        accept_2 = CNTRule_Sphericity(c)
+        
+        accept_contour= accept_1 and accept_2
             
         if accept_contour and cv2.contourArea(c)<AREA_REJECT_A: #kick out very large artifacts
             if  cv2.contourArea(c)>AREA_REJECT_B: #only for large artifacts check ratio
@@ -636,8 +643,6 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
                 cv2.drawContours(mask2, [c], -1, 0, -1)
                 quality_meter=quality_meter+1
                 quality_mass= quality_mass+ cv2.contourArea(c)
-                
-                
                 
                 
             
