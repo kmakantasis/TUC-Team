@@ -12,6 +12,7 @@ import ImageUtils
 import LoadData
 
 
+
 names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[3,4], number_of_data=[300,300], LRB='both')
 
 names_labels= (names, labels )
@@ -39,7 +40,7 @@ for i in range(1):#range(names.shape[0]):
     #name ='10321_left' #HE not done
     #name ='19116_right' #done
 
-
+    name ='9951_right'
 
 
     img_name = '../data/train_resized/%s.jpg'%name
