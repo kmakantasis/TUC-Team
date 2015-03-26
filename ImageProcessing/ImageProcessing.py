@@ -555,12 +555,17 @@ def CNTRule_Sphericity(cnt,accept_ratio=0.7):
     return cnt_area_ratio<accept_ratio
  
 def CNTRule_OutCircular(img,cnt):
-    img_height, img_width = img.shape
+    img_h, img_w = img.shape
     centroid_x, centroid_y=CNTCentroid(cnt)
     
-    reject_Y=centroid_y<100 or centroid_y > img_height-100 #define out range in y TODO in X
-    reject_X=centroid_x<150 or centroid_x > img_height-150 
-    return not (reject_X or reject_Y) #1 if accept
+    eye_center_x= int(img_w/2)
+    eye_center_y= int(img_h/2)
+    eye_r= int(img_h/2)-0.1*img_h
+    
+    distance_from_center= math.sqrt( (centroid_x-eye_center_x)**2 + (centroid_y-eye_center_y)**2)
+    
+
+    return distance_from_center< eye_r
     
     
 def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
@@ -616,10 +621,10 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
         aspect_ratio = float(w)/h
         total_mass= total_mass + cv2.contourArea(c)
         # if the contour is not bad, draw it on the mask
+        #-----we should put our rules here
         accept_contour=False
         if CNTRule_OutCircular(opening,c): accept_contour=True
  
-
             
         if accept_contour and cv2.contourArea(c)<AREA_REJECT_A: #kick out very large artifacts
             if  cv2.contourArea(c)>AREA_REJECT_B: #only for large artifacts check ratio
@@ -635,8 +640,7 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
                 
                 
                 
-                
-    
+            
     quality_percent = float(quality_meter)/ (len(cnt)+1)
     quality_mass_percent  =  float(quality_mass)/ (total_mass+1)
 
