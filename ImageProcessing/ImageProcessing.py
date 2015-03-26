@@ -4,73 +4,10 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 import math
 import cv2
+import ContourProcessing as CntP
+import ImageUtils as ImU
 
 
-def ImageRescale(im_r, TARGET_MPIXELS=1e6):   
-    height, width, depth = im_r.shape
-    mpixels=height*width
-    
-    lin_scale=np.sqrt( float(mpixels/TARGET_MPIXELS) )
-    if lin_scale<0.9 or lin_scale>1.1 : #avoid rescale if dimensions are close
-        new_width=int (width/lin_scale)
-        new_height= int(height/lin_scale)
-        im_r = cv2.resize(im_r, (new_width, new_height) )
-    
-    return im_r
-
-
-def LoadImage(img_name):
-    """            
-    Function definition
-    +++++++++++++++++++
-            
-        .. py:function:: LoadImage(img_name)
-
-            Loads and filters an image.
-            
-            :param string img_name: filename of the image or path if necessary.
-               
-            :rtype: image - three dimensional numpy array or one dimensional if image is grayscale.
-    """
-    im_r = cv2.imread(img_name)
-    im_r = ndimage.median_filter(im_r, 6)
-    im_r = ImageRescale(im_r)
-    
-    return im_r
-
-def SplitImage(img, silence=True):    
-    """            
-    Function definition
-    +++++++++++++++++++
-            
-        .. py:function:: SplitImage(img)
-
-            Splits an RGB image to channels and print the result.
-            
-            :param string img: RGB image to be splitted.
-            :param boolean silence: default is True. Set to False to print the result.
-               
-            :rtype: r, g, b - three numpy arrays containing red, green and blue channels of the image.
-    """
-    b, g, r = cv2.split(img)
-    b = cv2.equalizeHist(b)
-    g = cv2.equalizeHist(g)
-    r = cv2.equalizeHist(r)
-    
-    if silence == False:
-        titles = ['Original Image', 'Blue', 'Green', 'Red']
-        images = [img, b, g, r ]
-
-        plt.figure()
-
-        for i in xrange(4):
-            plt.subplot(2,2,i+1),plt.imshow(images[i],'gray')
-            plt.title(titles[i])
-            plt.xticks([]),plt.yticks([])
-        
-        plt.show()
-
-    return r,g,b
     
 
 def Find_Majority(k):
@@ -441,7 +378,8 @@ def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     for i in range(1,DIL):
         kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i,i+1))
         dilate =cv2.dilate(dilate,kernel,iterations = 1)
-     
+    
+         
     #closing  
     closing=dilate
     for i in range(1,CLO):
@@ -451,7 +389,7 @@ def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     #opening
     kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
     opening = cv2.morphologyEx(closing, cv2.MORPH_OPEN, kernel)
-        
+         
     if silence == False:
         titles = ['Original Image', 'Dilated', 'Opened', 'Closed']
         images = [img, dilate, closing, opening ]
@@ -533,41 +471,9 @@ def TriangularMasking():
     #Conour Processing should be a seperate Folder
     #Methods starting with CNT declare contour property extractio
     #Methods starting with CNTRule declare reject rule
-def CNTCentroid(cnt):
-    M = cv2.moments(cnt)
-    if M['m00'] >0:
-        centroid_x = int(M['m10']/M['m00'])
-        centroid_y = int(M['m01']/M['m00'])
-    else: centroid_x, centroid_y = 0,0
-            
-        
-    return centroid_x, centroid_y
-
-def CNTRule_Sphericity(cnt,accept_ratio=0.7):
-    #TODO
-    center, radius= cv2.minEnclosingCircle(cnt)
-    
-    min_circle_area= 3.14159*radius**2
-    cnt_area= cv2.contourArea(cnt)
-    
-    cnt_area_ratio = cnt_area/min_circle_area
-    
-    return cnt_area_ratio<accept_ratio
- 
-def CNTRule_OutCircular(img,cnt):
-    img_h, img_w = img.shape
-    centroid_x, centroid_y=CNTCentroid(cnt)
-    
-    eye_center_x= int(img_w/2)
-    eye_center_y= int(img_h/2)
-    eye_r= int(img_h/2)-0.08*img_h
-    
-    distance_from_center= math.sqrt( (centroid_x-eye_center_x)**2 + (centroid_y-eye_center_y)**2)
-    
-    return distance_from_center< eye_r
     
     
-def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
+def FeaturesDetection(img, total_mask, TP_MASK=True, silence=True):
     """            
     Function definition
     +++++++++++++++++++
@@ -584,15 +490,24 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
                
             :rtype: tophat, mask2 - two two dimensional numpy arrays corresponding to features. 
     """
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(80,80))
-    tophat = cv2.morphologyEx(opening, cv2.MORPH_TOPHAT, kernel)
+    if silence==False: ImU.PrintImg(img,'before tophat')
+       
+        
+    #tophat
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
+    tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
+  
+
+    if silence==False: ImU.PrintImg(tophat,'after tophat')
+    #threshold
+    ret,thresh = cv2.threshold(tophat,25,100,cv2.THRESH_BINARY)
     
-    ret,thresh = cv2.threshold(tophat,30,100,cv2.THRESH_BINARY)  
-    if silence==False: 
-        plt.figure()
-        plt.title('thresholded image')
-        plt.imshow(thresh, cmap = 'gray')
-        plt.show()    
+    if silence==False: ImU.PrintImg(thresh,'tophat & threshold')
+     
+    #thresh_test
+    #ret, thresh_test = cv2.threshold( img,0,253,cv2.THRESH_BINARY) 
+    
+  
     
     if TP_MASK==True:
         thresh= np.array(thresh*total_mask, dtype="uint8")       
@@ -606,7 +521,7 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
     cv2.drawContours(mask, cnt, -1, (0,50,100), 2)    
     
     # We sort and discard possible noisy features/artifacts
-    img_height, img_width = opening.shape
+    img_height, img_width = img.shape
  
     
     mask2 = np.ones(thresh.shape[:2], dtype="uint8") * 255
@@ -628,8 +543,8 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
         #-----we should put our rules here
         accept_contour=False
         
-        accept_1 = CNTRule_OutCircular(opening,c)
-        accept_2 = CNTRule_Sphericity(c)
+        accept_1 = CntP.CNTRule_OutCircular(img,c)
+        accept_2 = CntP.CNTRule_Sphericity(c)
         
         accept_contour= accept_1 and accept_2
             
@@ -652,8 +567,14 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
 
     mask2=1- mask2/mask2.max()  
     tophat= tophat*mask2 
-    
-    if silence==False:  
+  
+    if silence==False: 
+        plt.figure()
+        plt.title('contour filterdd image')
+        plt.imshow(tophat, cmap = 'gray')
+        plt.show() 
+        
+    if silence==True:  
         titles = ['Refined Contour mask', 'Refined Tophat']
         images = [mask2, tophat]
 
@@ -672,7 +593,7 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
     return tophat, mask2
     
     
-def DetectHE(img, gamma_offet=0, silence=True):
+def DetectHE(img, gamma_offset=0, silence=True):
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
     if silence==False:  
         print ("Hist[0]=%3.3f" %hist[0])
@@ -691,10 +612,10 @@ def DetectHE(img, gamma_offet=0, silence=True):
     '''  
         
     if (hist[0]<mpixels/2.):
-        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1 + gamma_offet
+        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1 + gamma_offset
         img= GammaCorrection(img,gamma)
     else:
-        gamma=1 + gamma_offet
+        gamma=1 + gamma_offset
         img= GammaCorrection(img,gamma)
      
        
@@ -704,11 +625,11 @@ def DetectHE(img, gamma_offet=0, silence=True):
         print ("After Gamma=%2.2f Hist[0]=%3.3f" %(gamma,hist[0]) )  
         print ("channel mean=%3.3f" %np.mean(img))
     
-    dilate, closing, opening = BasicMorphology(img, DIL=5, CLO=4, silence=silence)
+    dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=4, silence=silence)
             
     circular_mask, fill_mask, circular_inv, total_mask = CircularDetectMasking(img, opening, silence=silence)
 
-    tophat, mask2 = FeaturesDetection(opening, total_mask, silence=silence) 
+    tophat, mask2 = FeaturesDetection(dilate, total_mask, silence=False) #default=opening
     
     return tophat, mask2
 

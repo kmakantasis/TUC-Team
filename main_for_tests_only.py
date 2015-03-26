@@ -6,12 +6,13 @@ import matplotlib.image as mpimg
 sys.path.append('./ImageProcessing')
 sys.path.append('./DataCreation')
 import cv2
-
+import numpy
 import ImageProcessing
+import ImageUtils
 import LoadData
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[2,4], number_of_data=[30,30], LRB='both')
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[3,4], number_of_data=[300,300], LRB='both')
 
 names_labels= (names, labels )
 
@@ -34,16 +35,24 @@ for i in range(1):#range(names.shape[0]):
 
     #name='456_left' 
     #name='1430_left'
+    name='11031_right' #HE
+
 
     img_name = '../data/train_resized/%s.jpg'%name
     img_name_temp = '../%s.jpg'%name
     
-    img = ImageProcessing.LoadImage(img_name)
+    img = ImageUtils.LoadImage(img_name)
 
-    r,g,b = ImageProcessing.SplitImage(img, silence=True)
+    r,g,b = ImageUtils.SplitImage(img, silence=True)
     
+    gray = 0.2989 * r + 0.5870 * g + 0.1140 * b #cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    gray=255*(gray/gray.max())
+   # gray= gray.flatten()
+    
+    gray=numpy.uint8(gray)
+     
 
-    features, mask2 = ImageProcessing.DetectHE(g, gamma_offet=0, silence=False)
+    features, mask2 = ImageProcessing.DetectHE(gray, gamma_offset=-0.6, silence=True)
 
     
     #ImageProcessing.DetectMicroAN(g)
@@ -51,7 +60,7 @@ for i in range(1):#range(names.shape[0]):
     #cropped_image = ImageProcessing.CropImage(g, features, silence=True)
     
     #ImageProcessing.TriangularMasking()
-    
+    plt.figure()
     image = mpimg.imread(img_name)
     plt.imshow(image)
     plt.show()
