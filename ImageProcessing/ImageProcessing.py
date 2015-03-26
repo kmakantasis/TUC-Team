@@ -530,7 +530,37 @@ def TriangularMasking():
         .. py:function::
         
     """
-  
+    #Conour Processing should be a seperate Folder
+    #Methods starting with CNT declare contour property extractio
+    #Methods starting with CNTRule declare reject rule
+def CNTCentroid(cnt):
+    M = cv2.moments(cnt)
+    if M['m00'] >0:
+        centroid_x = int(M['m10']/M['m00'])
+        centroid_y = int(M['m01']/M['m00'])
+    else: centroid_x, centroid_y = 0,0
+            
+        
+    return centroid_x, centroid_y
+
+def CNTRule_Sphericity(cnt,accept_ratio=0.7):
+    #TODO
+    center, radius= cv2.minEnclosingCircle(cnt)
+    
+    min_circle_area= 3.14159*radius**2
+    cnt_area= cv2.contourArea(cnt)
+    
+    cnt_area_ratio = cnt_area/min_circle_area
+          
+    return cnt_area_ratio<accept_ratio
+ 
+def CNTRule_OutCircular(img,cnt):
+    img_height, img_width = img.shape
+    centroid_x, centroid_y=CNTCentroid(cnt)
+    
+    reject_Y=centroid_y<100 or centroid_y > img_height-100 #define out range in y TODO in X
+    reject_X=centroid_x<150 or centroid_x > img_height-150 
+    return not (reject_X or reject_Y) #1 if accept
     
     
 def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
@@ -562,9 +592,14 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
     thresh2=thresh+0 #otherwise it affects thresh
     mask = np.ones(thresh.shape[:2], dtype="uint8") * 255
     cnt = cv2.findContours(thresh2,cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
+    
+
     cv2.drawContours(mask, cnt, -1, (0,50,100), 2)    
     
     # We sort and discard possible noisy features/artifacts
+    img_height, img_width = opening.shape
+ 
+    
     mask2 = np.ones(thresh.shape[:2], dtype="uint8") * 255
     quality_meter=0
     total_mass=0
@@ -576,12 +611,18 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
     #----------------end parameters-------------
     
     for c in cnt :
+        #CNTRule_Sphericity(c)
         x,y,w,h = cv2.boundingRect(c)
         aspect_ratio = float(w)/h
         total_mass= total_mass + cv2.contourArea(c)
         # if the contour is not bad, draw it on the mask
-        if cv2.contourArea(c)<AREA_REJECT_A: #kick out very large artifacts
-            if cv2.contourArea(c)>AREA_REJECT_B: #only for large artifacts check ratio
+        accept_contour=False
+        if CNTRule_OutCircular(opening,c): accept_contour=True
+ 
+
+            
+        if accept_contour and cv2.contourArea(c)<AREA_REJECT_A: #kick out very large artifacts
+            if  cv2.contourArea(c)>AREA_REJECT_B: #only for large artifacts check ratio
                 if  (aspect_ratio>(1./ASPECT_RATIO) and aspect_ratio<ASPECT_RATIO) :
                     cv2.drawContours(mask2, [c], -1, 0, -1)
                     quality_meter=quality_meter+1
@@ -590,6 +631,11 @@ def FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True):
                 cv2.drawContours(mask2, [c], -1, 0, -1)
                 quality_meter=quality_meter+1
                 quality_mass= quality_mass+ cv2.contourArea(c)
+                
+                
+                
+                
+                
     
     quality_percent = float(quality_meter)/ (len(cnt)+1)
     quality_mass_percent  =  float(quality_mass)/ (total_mass+1)
