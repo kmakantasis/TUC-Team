@@ -48,10 +48,6 @@ for i in range(1):#range(names.shape[0]):
     name ='5140_left' #no XE, mor subtle deformations
 
 
-
-
-
-
     img_name = '../data/train_resized/%s.jpg'%name
     img_name_temp = '../%s.jpg'%name
     

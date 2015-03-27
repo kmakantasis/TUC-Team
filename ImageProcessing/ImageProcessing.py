@@ -160,7 +160,7 @@ def HistAdjust(img, gamma_offset=0, silence=True):
         
 def DetectHE(img, vessels_mask, gamma_offset=0, silence=False):
     
-   #img=HistAdjust(img, gamma_offset=0, silence=True)
+    #img=HistAdjust(img, gamma_offset=0, silence=True)
     #img=ImU.GammaCorrection(img,3)
     
     dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 
@@ -174,10 +174,8 @@ def DetectHE(img, vessels_mask, gamma_offset=0, silence=False):
     
     # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
     tophat, mask2 = FeaturesDetection(opening, total_mask, EQ=False, silence=True) #default=opening
- 
-    
-    return tophat, mask2
 
+    return tophat, mask2
 
 
 def DetectVessels(img, gamma_offset=0, silence=True):
@@ -190,7 +188,6 @@ def DetectVessels(img, gamma_offset=0, silence=True):
             
     #circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=False)
     
-    
     erode =  Erode(img, EROD=2, silence=True)    
     
     img=255-erode
@@ -199,8 +196,7 @@ def DetectVessels(img, gamma_offset=0, silence=True):
     #tophat
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
     tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
-    
-    
+     
     #closing
     #tophat= Closing(tophat, CLO=6, silence=True)
     #kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
@@ -214,7 +210,6 @@ def DetectVessels(img, gamma_offset=0, silence=True):
     
     if silence==False: ImU.PrintImg(thresh,'tophat & threshold')    
     
- 
     #tophat, mask2 = FeaturesDetection(img, total_mask, EQ=False,  silence=False)
     return thresh
     
