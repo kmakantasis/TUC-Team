@@ -50,11 +50,58 @@ def CNTRule_AspectRatio(c):
     return (aspect_ratio>(1./ASPECT_RATIO) and aspect_ratio<ASPECT_RATIO)  
 
 
+def ContourFiltering(binary, silence=False):
+  
+    cnt = cv2.findContours(binary,cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
+    
 
+    cv2.drawContours(mask, cnt, -1, (0,50,100), 2)    
+    
+    # We sort and discard possible noisy features/artifacts
+    img_height, img_width = img.shape
+    mask2 = np.ones(thresh.shape[:2], dtype="uint8") * 255
+
+    
+    for c in cnt :
+          
+        #-----we should put our rules here
+        Rules_Passed=False
+        
+        rule0 = CntP.CNTRule_Area(c, 10, 1200)
+        rule1 = CntP.CNTRule_KickOutCircular(img,c)
+        rule2 =1# CntP.CNTRule_Sphericity(c)
+        rule3 = CntP.CNTRule_AspectRatio(c)
+        
+        Rules_Passed= rule0 and rule1 and rule2 and rule3
+            
+        if Rules_Passed : #kick out very large artifacts
+            cv2.drawContours(mask2, [c], -1, 0, -1)
+        
+        mask2=1- mask2/mask2.max()
+        
+    '''     
+    if silence==False:  
+        titles = ['Refined Contour mask', 'Refined Tophat']
+        images = [mask2, tophat]
+
+        plt.figure() 
+        
+        for i in xrange(2):
+            plt.subplot(1,2,i+1),plt.imshow(images[i],'gray')
+            plt.title(titles[i])
+            plt.xticks([]),plt.yticks([])
+        
+        plt.show()
+      '''    
+        
+    return mask2                         
+            
+    #quality_percent = float(quality_meter)/ (len(cnt)+1)
+   # quality_mass_percent  =  float(quality_mass)/ (total_mass+1)
 
     
     
-    
+
     
     
     
