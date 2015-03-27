@@ -115,7 +115,9 @@ def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
     if silence==False: ImU.PrintImg(tophat,'after tophat')
     #threshold
     ret,thresh = cv2.threshold(tophat,15,100,cv2.THRESH_BINARY)
-    
+ 
+
+   
     if silence==False: ImU.PrintImg(thresh,'tophat & threshold')
      
     #thresh_test
@@ -128,35 +130,9 @@ def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
     
     thresh2=thresh+0 #otherwise it affects thresh
     mask = np.ones(thresh.shape[:2], dtype="uint8") * 255
-    cnt = cv2.findContours(thresh2,cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[0]
     
-
-    cv2.drawContours(mask, cnt, -1, (0,50,100), 2)    
     
-    # We sort and discard possible noisy features/artifacts
-    img_height, img_width = img.shape
-    mask2 = np.ones(thresh.shape[:2], dtype="uint8") * 255
-
-    
-    for c in cnt :
-          
-        #-----we should put our rules here
-        Rules_Passed=False
-        
-        rule0 = CntP.CNTRule_Area(c, 10, 1200)
-        rule1 = CntP.CNTRule_KickOutCircular(img,c)
-        rule2 =1# CntP.CNTRule_Sphericity(c)
-        rule3 = CntP.CNTRule_AspectRatio(c)
-        
-        Rules_Passed= rule0 and rule1 and rule2 and rule3
-            
-        if Rules_Passed : #kick out very large artifacts
-            cv2.drawContours(mask2, [c], -1, 0, -1)
-                             
-            
-    #quality_percent = float(quality_meter)/ (len(cnt)+1)
-   # quality_mass_percent  =  float(quality_mass)/ (total_mass+1)
-
+ 
 
     mask2=1- mask2/mask2.max()  
     
@@ -164,10 +140,10 @@ def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
         
     tophat= tophat*mask2 
     
-    if silence==False: ImU.PrintImg(tophat,'contour filtered image')
+    ImU.PrintImg(tophat,'contour filtered image')
  
         
-    if silence==True:  
+    if silence==False:  
         titles = ['Refined Contour mask', 'Refined Tophat']
         images = [mask2, tophat]
 
@@ -208,14 +184,14 @@ def HistAdjust(img, gamma_offset=0, silence=True):
     return img
         
         
-def DetectHE(img, vessels_mask, gamma_offset=0, silence=True):
+def DetectHE(img, vessels_mask, gamma_offset=0, silence=False):
     
    #img=HistAdjust(img, gamma_offset=0, silence=True)
     #img=ImU.GammaCorrection(img,3)
     
     dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 
             
-    circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=silence)
+    circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=True)
  
     x,y= Msk.Disc_Detect(img,'WHITE')
     optic_disc_mask= Msk.DiscMask(circular_mask, x,y,60)
@@ -223,7 +199,7 @@ def DetectHE(img, vessels_mask, gamma_offset=0, silence=True):
     total_mask= total_mask*optic_disc_mask #*vessels_mask
     
     # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
-    tophat, mask2 = FeaturesDetection(opening, total_mask, EQ=False, silence=False) #default=opening
+    tophat, mask2 = FeaturesDetection(opening, total_mask, EQ=False, silence=True) #default=opening
  
     
     return tophat, mask2

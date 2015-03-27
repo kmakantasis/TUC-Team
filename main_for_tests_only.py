@@ -45,6 +45,9 @@ for i in range(1):#range(names.shape[0]):
     #name ='11267_left'
     #name ='1639_left' #check
 
+    name ='5140_left' #no XE, mor subtle deformations
+
+
 
 
 
@@ -62,8 +65,9 @@ for i in range(1):#range(names.shape[0]):
     
     gray=numpy.uint8(gray)
     
-    vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
+    #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
     ImageProcessing.DetectHE(g, vessels_mask, gamma_offset=0, silence=True)
+    
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
 
