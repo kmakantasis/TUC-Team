@@ -82,7 +82,7 @@ def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     return dilate, opening, closing
      
     
-def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
+def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, EQ=False, silence=True):
     """            
     Function definition
     +++++++++++++++++++
@@ -114,50 +114,24 @@ def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
 
     if silence==False: ImU.PrintImg(tophat,'after tophat')
     #threshold
-    ret,thresh = cv2.threshold(tophat,15,100,cv2.THRESH_BINARY)
- 
-
-   
+    ret,thresh = cv2.threshold(tophat,LOW,HIGH,cv2.THRESH_BINARY)
+  
     if silence==False: ImU.PrintImg(thresh,'tophat & threshold')
-     
-    #thresh_test
-    #ret, thresh_test = cv2.threshold( img,0,253,cv2.THRESH_BINARY) 
+    
     
      
     if TP_MASK==True:
         thresh= np.array(thresh*total_mask, dtype="uint8")       
-    
-    
-    thresh2=thresh+0 #otherwise it affects thresh
-    mask = np.ones(thresh.shape[:2], dtype="uint8") * 255
-    
-    
- 
+      
+    #mask = np.ones(thresh.shape[:2], dtype="uint8") * 255
 
-    mask2=1- mask2/mask2.max()  
-    
-
-        
-    tophat= tophat*mask2 
+    #tophat= tophat*mask2 
     
     ImU.PrintImg(tophat,'contour filtered image')
  
-        
-    if silence==False:  
-        titles = ['Refined Contour mask', 'Refined Tophat']
-        images = [mask2, tophat]
+    return tophat
 
-        plt.figure() 
-        
-        for i in xrange(2):
-            plt.subplot(1,2,i+1),plt.imshow(images[i],'gray')
-            plt.title(titles[i])
-            plt.xticks([]),plt.yticks([])
-        
-        plt.show()
-       
-        
-    return tophat, mask2
+
     
 def HistAdjust(img, gamma_offset=0, silence=True):
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
