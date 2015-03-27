@@ -81,7 +81,7 @@ def Find_Majority(k):
         return int ( sum(k)/len(k) )
         
     
-def Disc_Detect(img2,disc_type,silence=False):
+def Disc_Detect(img2,disc_type,silence=True):
 
     '''
     Last Maintenance: Antonis
@@ -171,6 +171,12 @@ def Disc_Detect(img2,disc_type,silence=False):
         print ("Majority Vote Disc x=%d , y=%d ")  %(x_majority,y_majority)
                 
     return x_majority, y_majority 
+    
+    
+def DiscMask(img,x,y,r):
+    black = np.ones(img.shape)
+    cv2.circle(black, (x,y), int(r+15), 0, -1)  # -1 to draw filled circles
+    return black
     
 def Global_LR_Gradient(g, silence=False):
     '''

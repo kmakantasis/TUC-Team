@@ -99,6 +99,8 @@ def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
                
             :rtype: tophat, mask2 - two two dimensional numpy arrays corresponding to features. 
     """
+    if silence==False: ImU.PrintImg(total_mask,'total mask')    
+    
     if EQ:
         img = cv2.equalizeHist(img)
         
@@ -112,7 +114,7 @@ def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
 
     if silence==False: ImU.PrintImg(tophat,'after tophat')
     #threshold
-    ret,thresh = cv2.threshold(tophat,25,100,cv2.THRESH_BINARY)
+    ret,thresh = cv2.threshold(tophat,15,100,cv2.THRESH_BINARY)
     
     if silence==False: ImU.PrintImg(thresh,'tophat & threshold')
      
@@ -157,6 +159,9 @@ def FeaturesDetection(img, total_mask,  TP_MASK=True, EQ=False, silence=True):
 
 
     mask2=1- mask2/mask2.max()  
+    
+
+        
     tophat= tophat*mask2 
     
     if silence==False: ImU.PrintImg(tophat,'contour filtered image')
@@ -203,18 +208,23 @@ def HistAdjust(img, gamma_offset=0, silence=True):
     return img
         
         
-def DetectHE(img, gamma_offset=0, silence=True):
+def DetectHE(img, vessels_mask, gamma_offset=0, silence=True):
     
-    img=HistAdjust(img, gamma_offset=0, silence=True)
+   #img=HistAdjust(img, gamma_offset=0, silence=True)
+    #img=ImU.GammaCorrection(img,3)
     
-    dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=4, silence=silence)
+    dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 
             
     circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=silence)
+ 
+    x,y= Msk.Disc_Detect(img,'WHITE')
+    optic_disc_mask= Msk.DiscMask(circular_mask, x,y,60)
     
+    total_mask= total_mask*optic_disc_mask #*vessels_mask
     
-    #tophat, mask2 = FeaturesDetection(img, total_mask, EQ=False, silence=False) #default=opening
-    mask2=0
-    tophat=DetectVessels(img, gamma_offset=0, silence=False)
+    # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
+    tophat, mask2 = FeaturesDetection(opening, total_mask, EQ=False, silence=False) #default=opening
+ 
     
     return tophat, mask2
 
@@ -226,9 +236,9 @@ def DetectVessels(img, gamma_offset=0, silence=True):
     img=ImU.GammaCorrection(img,0.7)
     
     #only for mask
-    dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=4, silence=silence)
+    #dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=4, silence=False)
             
-    circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=silence)
+    #circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=False)
     
     
     erode =  Erode(img, EROD=2, silence=True)    
@@ -243,18 +253,20 @@ def DetectVessels(img, gamma_offset=0, silence=True):
     
     #closing
     #tophat= Closing(tophat, CLO=6, silence=True)
-    kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=4)
+    #kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    #closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=4)
    
     if silence==False: ImU.PrintImg(tophat,'after tophat')
     #threshold
-    ret,thresh = cv2.threshold(tophat,5,40,cv2.THRESH_BINARY)
+    ret,thresh = cv2.threshold(tophat,10,50,cv2.THRESH_BINARY)
+    
+    thresh =1-thresh/thresh.max()
     
     if silence==False: ImU.PrintImg(thresh,'tophat & threshold')    
     
  
     #tophat, mask2 = FeaturesDetection(img, total_mask, EQ=False,  silence=False)
-    return tophat
+    return thresh
     
 
 def CropImage(img, features, silence=True):
