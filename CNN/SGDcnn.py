@@ -14,7 +14,7 @@ import MultiLayerPerceptron
 import LoadData
 
 
-def test_cnn(names, labels, learning_rate=0.05, L_reg=0.0001, n_epochs=70, nkerns=[3, 6, 12, 24, 48], batch_size=100):
+def test_cnn(names, labels, learning_rate=0.05, L_reg=0.0001, n_epochs=70, nkerns=[3, 6, 12, 24, 48], batch_size=50):
     
     # Load dataset
     datasets = CNNLoadData.LoadData(names, labels, ratio=0.80)
@@ -67,7 +67,7 @@ def test_cnn(names, labels, learning_rate=0.05, L_reg=0.0001, n_epochs=70, nkern
                                       layer4.output.flatten(2),
                                       nkerns[4] * 4 * 4,
                                       96,
-                                      5)
+                                      2)
                             
 #    layer5 = MultiLayerPerceptron.HiddenLayer(rng, 
 #                                      layer4.output.flatten(2),
@@ -184,45 +184,51 @@ def test_cnn(names, labels, learning_rate=0.05, L_reg=0.0001, n_epochs=70, nkern
 
 if __name__ == '__main__':
     
-    names_input, labels_input = LoadData.InputDataset(csv_name='../CSV/trainLabels.csv', input_folder='../../data/input_train')
+    names_input, labels_input = LoadData.InputDataset(csv_name='../CSV/trainLabels.csv', input_folder='../data/input')
 
-    print 'Names loaded...'    
-    
-    LRB_names = []
-    LRB_labels = []
-    
-    class_0_max = 2000
-    class_0_members = 0
-    
-    for i in range(names_input.shape[0]):
-        if names_input[i][0].split('_')[1]=='left':
-            if labels_input[i][0] == 0 and class_0_members <= class_0_max:
-                LRB_names.append(names_input[i][0])
-                LRB_labels.append(labels_input[i][0])
-                class_0_members = class_0_members + 1
-            if labels_input[i][0] != 0:# and labels_input[i][0] != 1:
-                LRB_names.append(names_input[i][0])
-                LRB_labels.append(labels_input[i][0])
-                
-    names_input_left = np.asarray(LRB_names)
-    labels_input_left = np.asarray(LRB_labels)    
+#    print 'Names loaded...'    
+#    
+#    LRB_names = []
+#    LRB_labels = []
+#    
+#    class_0_max = 2000
+#    class_0_members = 0
+#    
+#    for i in range(names_input.shape[0]):
+#        if names_input[i][0].split('_')[1]=='left':
+#            if labels_input[i][0] == 0 and class_0_members <= class_0_max:
+#                LRB_names.append(names_input[i][0])
+#                LRB_labels.append(labels_input[i][0])
+#                class_0_members = class_0_members + 1
+#            if labels_input[i][0] != 0:# and labels_input[i][0] != 1:
+#                LRB_names.append(names_input[i][0])
+#                LRB_labels.append(labels_input[i][0])
+#                
+#    names_input_left = np.asarray(LRB_names)
+#    labels_input_left = np.asarray(LRB_labels)    
+#
+    labels_0_1 = np.zeros((len(labels_input),))
+    for i in range(labels_input.shape[0]):
+        if labels_input[i] > 0:
+            labels_0_1[i] = 1.0
+            
+    rand_perm = np.random.permutation(2000)
+    names_input = names_input[rand_perm]
+    labels_0_1 = labels_0_1[rand_perm]
+#    
 
-#    labels_0_1 = np.zeros((len(LRB_labels),))
-#    for i in range(labels_input_left.shape[0]):
-#        if labels_input_left[i] > 1:
-#            labels_0_1[i] = 1.0
-        
-    #names_input_left = np.reshape(names_input_left, (len(LRB_labels), ))
-    
-    rand_perm = np.random.permutation(len(LRB_labels))
-    names_input_left = names_input_left[rand_perm]
-    labels_input_left = labels_input_left[rand_perm]
-    
-    del labels_input, LRB_labels, LRB_names, names_input, rand_perm
-    
-    #print 'Test set ratio: %f'% np.mean(labels_0_1[6154:])
+#        
+#    #names_input_left = np.reshape(names_input_left, (len(LRB_labels), ))
+#    
+#    rand_perm = np.random.permutation(len(LRB_labels))
+#    names_input_left = names_input_left[rand_perm]
+#    labels_input_left = labels_input_left[rand_perm]
+#    
+#    del labels_input, LRB_labels, LRB_names, names_input, rand_perm
+#    
+#    #print 'Test set ratio: %f'% np.mean(labels_0_1[6154:])
    
-    params = test_cnn(names_input_left, labels_input_left)
+    params = test_cnn(names_input, labels_0_1)
     
     save_weights=True
     
