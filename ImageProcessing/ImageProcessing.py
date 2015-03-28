@@ -82,7 +82,7 @@ def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     return dilate, opening, closing
      
     
-def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, EQ=False, silence=True):
+def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15, EQ=False, silence=True):
     """            
     Function definition
     +++++++++++++++++++
@@ -105,9 +105,9 @@ def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, EQ=False,
         
     if silence==False: ImU.PrintImg(img,'before tophat')
        
-        
+     
     #tophat
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(KERNEL,KERNEL))
     tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
   
     #apply mask
@@ -119,16 +119,15 @@ def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, EQ=False,
     ImU.PrintImg(thresh,'tophat & threshold')
 
     
-    x,y=tophat.shape
-    bright= np.ndarray( shape=(x,y), dtype="uint8" )
-    bright.fill(2)  
-    tophat = cv2.multiply(tophat, bright )
+    '''    
+    tophat=ImU.ContrastCorrection(tophat,1.5)
+
     
     if silence==False: ImU.PrintImg(tophat,'tophat mult x image') 
     
     ret,thresh = cv2.threshold(tophat,LOW,HIGH,cv2.THRESH_BINARY)
     ImU.PrintImg(thresh,'tophat mult x & threshold')
-    
+    '''
     
     if silence==False: ImU.PrintImg(tophat,'after tophat')
         
@@ -170,7 +169,13 @@ def HistAdjust(img, gamma_offset=0, silence=True):
         print ("channel mean=%3.3f" %np.mean(img))
         
     return img
-        
+
+def MatchedFilter(img):
+    kernel = np.ones((5,5),np.float32)/25
+    dst = cv2.filter2D(img,-1,kernel)
+    ImU.PrintImg(img,'original')
+    ImU.PrintImg(dst,'filtered')
+          
         
 def DetectHE(img, gamma_offset=0, silence=False):
     
@@ -181,14 +186,18 @@ def DetectHE(img, gamma_offset=0, silence=False):
     circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=True)
     
     x,y= Msk.Disc_Detect(img,'WHITE')
-    optic_disc_mask= Msk.DiscMask(circular_mask, x,y,60)
+    optic_disc_mask= Msk.DiscMask(circular_mask, x,y,65)
     total_mask= total_mask*optic_disc_mask #*vessels_mask
     
     #opening=255-opening
     # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, EQ=False, silence=True) #default=opening
+    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
     #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100,  EQ=True, silence=True) #default=opening
-
+    #opening=ImU.ContrastCorrection(opening,1) 
+    
+    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15,EQ=False, silence=True)
+    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=20,EQ=False, silence=True)
+    
     return tophat
 
 

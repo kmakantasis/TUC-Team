@@ -99,6 +99,14 @@ def GammaCorrection(img, correction):
     img = img/255.0
     img = cv2.pow(img, correction)
     return np.uint8(img*255)
+
+def ContrastCorrection(img, correction):
+
+    x,y=img.shape
+    bright= np.ndarray( shape=(x,y), dtype="uint8" )
+    bright.fill(2)  
+    img = cv2.multiply(img, bright)
+    return img
     
     
 def DetectMicroAN(img, EROD=4, CLO=4, OPEN=5, silence=False):

@@ -63,7 +63,10 @@ for i in range(1):#range(names.shape[0]):
     gray=numpy.uint8(gray)
     
     #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
-    ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
+   
+    ImageProcessing.MatchedFilter(g)
+   
+    #ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
     
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
