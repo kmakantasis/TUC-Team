@@ -13,7 +13,7 @@ import LoadData
 
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[2,3,4], number_of_data=[300,300,300], LRB='both')
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[1, 2,3,4], number_of_data=[300,300,300,300], LRB='both')
 
 names_labels= (names, labels )
 
@@ -41,11 +41,12 @@ for i in range(1):#range(names.shape[0]):
     #name ='19116_right' #done
 
     #name ='9951_right'
-    #name ='4366_left'
+    #name ='10904_right'
     #name ='11267_left'
     #name ='1639_left' #check
 
-    name ='5140_left' #no XE, mor subtle deformations
+    #name ='5140_left' #no XE, more subtle deformations
+
 
 
     img_name = '../data/train_resized/%s.jpg'%name
@@ -62,7 +63,7 @@ for i in range(1):#range(names.shape[0]):
     gray=numpy.uint8(gray)
     
     #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
-    ImageProcessing.DetectHE(g, vessels_mask, gamma_offset=0, silence=True)
+    ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
     
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
@@ -77,7 +78,7 @@ for i in range(1):#range(names.shape[0]):
     plt.imshow(image)
     plt.show()
     
-    print '--->Image Name:%s, Image label=%d '% (name,label)
+    print '--->Index=%d ,Image Name:%s, Image label=%d '% (i, name,label)
         
 '''
     g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)
