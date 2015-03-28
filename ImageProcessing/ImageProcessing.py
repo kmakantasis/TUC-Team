@@ -172,9 +172,35 @@ def HistAdjust(img, gamma_offset=0, silence=True):
 
 def MatchedFilter(img):
     kernel = np.ones((5,5),np.float32)/25
-    dst = cv2.filter2D(img,-1,kernel)
-    ImU.PrintImg(img,'original')
-    ImU.PrintImg(dst,'filtered')
+    kernel_x = np.ndarray( shape=(5,5), dtype="int" )
+    kernel_y = np.ndarray( shape=(5,5), dtype="int" )
+    
+    kernel_x[0] = [-2, 0, 0, 0, +2]
+    kernel_x[1] = [-2, 0, 0, 0, +2]
+    kernel_x[2] = [-2, 0, 0, 0, +2]
+    kernel_x[3] = [-2, 0, 0, 0, +2]
+    kernel_x[4] = [-2, 0, 0, 0, +2]        
+    
+    kernel_y[0] = [-2,-2,-2,-2,-2]
+    kernel_y[1] = [ 0, 0, 0, 0, 0]
+    kernel_y[2] = [ 0, 0, 0, 0, 0]
+    kernel_y[3] = [ 0, 0, 0, 0, 0]
+    kernel_y[4] = [+2,+2,+2,+2,+2]
+    
+    pi= math.pi
+    thetas= [0, 0.5*pi, pi, 1.5*pi]
+    
+    x,y=img.shape
+    dst= np.ndarray( shape=(x,y), dtype="uint8" )    
+    
+    for theta in thetas:
+        kernel = kernel_x*math.cos(theta) + kernel_y*math.sin(theta)
+        
+        dst = cv2.filter2D(img,-1,kernel) #-1 means the same depth as original image
+        #ret,dst = cv2.threshold(dst,0,127,cv2.THRESH_BINARY)     
+        
+        #ImU.PrintImg(img,'original')
+        ImU.PrintImg(dst,'filtered')
           
         
 def DetectHE(img, gamma_offset=0, silence=False):
