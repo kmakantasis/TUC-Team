@@ -379,7 +379,7 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     # Choose if to rotate or not
     rows,cols = g.shape
     if abs(degs)<20:
-        M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1)
+        M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
         rot_g = cv2.warpAffine(g_original,M,(cols,rows)) # Rotation is done
         if silence==False:    
             plt.imshow(rot_g,cmap = 'gray')

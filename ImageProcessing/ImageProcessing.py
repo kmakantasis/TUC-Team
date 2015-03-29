@@ -171,12 +171,16 @@ def HistAdjust(img, gamma_offset=0, silence=True):
     return img
 
 def MatchedFilter(img):
+    '''
+    M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
+    rot_g = cv2.warpAffine(g_original,M,(cols,rows)) # Rotation is done    
+    '''
     kernel = np.ones((5,5),np.float32)/25
     kernel_x = np.ndarray( shape=(5,5), dtype="int" )
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
     
-    img = cv2.GaussianBlur(img,(7,7),5) 
+    img = cv2.GaussianBlur(img,(9,9),5) 
    
     kernel_x[0] = [-2, -1, 0, 1, +2]
     kernel_x[1] = [-2, -1, 0, 1, +2]
@@ -191,7 +195,9 @@ def MatchedFilter(img):
     kernel_y[4] = [+2,+2,+2,+2,+2]
     
     pi= math.pi
-    thetas= [0, 0.5*pi, pi, 1.5*pi]
+    #thetas= [0, 0.25*pi, 0.5*pi, 0.75*pi, 1*pi, 1.25*pi, 1.5*pi, 1.75*pi]
+    
+    thetas= [0, 0.5*pi,  1*pi,  1.5*pi ] 
     
     x,y=img.shape
     dst= np.ndarray( shape=(x,y), dtype="uint8" )    
@@ -212,10 +218,10 @@ def MatchedFilter(img):
 
     max_responses = np.zeros( shape=(x,y), dtype="uint8" )
     max_pix=-1
-    for x_pix in range(x-1):
-        for y_pix in range(y-1):
+    for x_pix in range(x):
+        for y_pix in range(y):
             
-            for z_pix in range(4-1):
+            for z_pix in range(4):
                 if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
             
             max_responses[x_pix][y_pix]=  max_pix
@@ -227,6 +233,67 @@ def MatchedFilter(img):
     
     return max_responses
           
+
+def MatchedFilter2(img):
+    '''
+   
+    '''
+    kernel = np.ones((5,5),np.float32)/25
+    kernel_x = np.ndarray( shape=(5,5), dtype="int" )
+    kernel_y = np.ndarray( shape=(5,5), dtype="int" )
+    
+    
+    img = cv2.GaussianBlur(img,(9,9),5) 
+   
+    kernel_x[0] = [-2, -1, 0, 1, +2]
+    kernel_x[1] = [-2, -1, 0, 1, +2]
+    kernel_x[2] = [-2, -1, 0, 1, +2]
+    kernel_x[3] = [-2, -1, 0, 1, +2]
+    kernel_x[4] = [-2, -1, 0, 1, +2]       
+    
+    kernel_y[0] = [-2,-2,-2,-2,-2]
+    kernel_y[1] = [-1,-1,-1,-1,-1]
+    kernel_y[2] = [ 0, 0, 0, 0, 0]
+    kernel_y[3] = [ 1, 1, 1, 1, 1]
+    kernel_y[4] = [+2,+2,+2,+2,+2]
+    kernel = kernel_x   
+    pi= math.pi
+ 
+    
+    thetas= [0, 90,  180,  270 ] 
+    
+    x,y=img.shape
+    dst= np.ndarray( shape=(x,y), dtype="uint8" )    
+    responses=list()
+    #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
+    #i=0
+    for theta in thetas:
+        
+        
+        M = cv2.getRotationMatrix2D((2,2),theta,1) #cv2.getRotationMatrix2D(center, angle, scale) → retval
+        rot_kernel = cv2.warpAffine(kernel,M,(5,5)) #  cv2.warpAffine(src, M, dsize[, dst[, flags[, borderMode[, borderValue]]]]) → dst 
+        
+        dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image
+           
+        responses.append(dst)
+       
+
+    max_responses = np.zeros( shape=(x,y), dtype="uint8" )
+    max_pix=-1
+    for x_pix in range(x):
+        for y_pix in range(y):
+            
+            for z_pix in range(4):
+                if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
+            
+            max_responses[x_pix][y_pix]=  max_pix
+            max_pix=-1
+            
+            
+    #ret,max_responses = cv2.threshold(max_responses,50,127,cv2.THRESH_BINARY) 
+    ImU.PrintImg(max_responses,'max_responses')
+    
+    return max_responses
         
 def DetectHE(img, gamma_offset=0, silence=False):
     
