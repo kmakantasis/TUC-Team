@@ -238,63 +238,86 @@ def MatchedFilter2(img):
     '''
    
     '''
-    kernel = np.ones((5,5),np.float32)/25
+    #kernel = np.ones((5,5),np.float32)/25
     kernel_x = np.ndarray( shape=(5,5), dtype="int" )
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
    
     
-    img = cv2.GaussianBlur(img,(9,9),5) 
-   
-    kernel_x[0] = [-2, -1, 0, 1, +2]
-    kernel_x[1] = [-2, -1, 0, 1, +2]
-    kernel_x[2] = [-2, -1, 0, 1, +2]
-    kernel_x[3] = [-2, -1, 0, 1, +2]
-    kernel_x[4] = [-2, -1, 0, 1, +2]       
-    
-    kernel_y[0] = [-2,-2,-2,-2,-2]
-    kernel_y[1] = [-1,-1,-1,-1,-1]
-    kernel_y[2] = [ 0, 0, 0, 0, 0]
-    kernel_y[3] = [ 1, 1, 1, 1, 1]
-    kernel_y[4] = [+2,+2,+2,+2,+2]
-    
-    kernel =kernel_x #+ kernel_y 
-
+    img = cv2.GaussianBlur(img,(31,31),5) 
+    kernel_zero = np.zeros(shape=(1,16), dtype="int")
+    kernel_line = np.zeros(shape=(1,16), dtype="int")
+    kernel_line = np.array([0, 4, 3, 2, 1, -2, -5, -6, -5, -2, 1 ,2, 3, 4, 0, 0])
+      
+    kernel_line.shape=(1,16)
  
+    
+    kernel=[kernel_zero,
+            kernel_zero,
+            kernel_zero,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_zero,
+            kernel_zero,
+            kernel_zero]   
+
+    kernel=np.asarray(kernel).reshape((16,16))
     pi=math.pi
-    thetas= [0.5*pi]#, 0.5*pi,  1*pi,  1.5*pi ] 
+    #thetas= [0, 0.25*pi]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
+    thetas= [0, 45, 90, 135, 180, 225, 270, 315]#, 45, 60]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
     
     x,y=img.shape
     dst= np.ndarray( shape=(x,y), dtype="uint8" )
-    rot_kernel = np.zeros(shape=(5,5), dtype="int" )
+    rot_kernel = np.zeros(shape=(16,16), dtype="int" )
      
     responses=list()
     #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
     #i=0
     
+    kernel=np.uint8(kernel +10)
+    rot_kernels=list()
     for theta in thetas:
-        
+        ''' 
         R=[ [math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta) ] ] #rotation matrix
         
         R=np.asarray(R)
         
-        for xx in range(5):
-            for yy in range(5):
+        for xx in range(16):
+            for yy in range(16):
                 
                 a= np.asarray ([ xx, yy  ])
                 
                 
-                a= a+5 # translate
+                a= a+8 # translate
                 b = R.dot (a.transpose())
-                b= b-5
-                if b.all()>=0 and b.all <=5:
+                b= b-8
+                if b.all()>=0 and b.all <=16:
                     rot_kernel[b[0]][b[1]]=kernel[xx][yy]
         
    
+        ImU.PrintImg(rot_kernel + 15,'rot kernel')
+        
+        
+        '''
+
+        M = cv2.getRotationMatrix2D((8,8),theta,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
+        rot_kernel = cv2.warpAffine(kernel,M,(16,16), borderValue=10) # Rotation is done
+        #ImU.PrintImg(rot_kernel,'rot kernel') 
+        rot_kernel=(rot_kernel.astype(int)-10).astype(int)
+        rot_kernel=rot_kernel/2.
+        rot_kernels.append(rot_kernel)
         
         dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
         responses.append(dst)
-       
+              
     # Find max responses
     max_responses = np.zeros( shape=(x,y), dtype="uint8" )
     max_pix=-1
@@ -310,8 +333,8 @@ def MatchedFilter2(img):
             
     #ret,max_responses = cv2.threshold(max_responses,50,127,cv2.THRESH_BINARY) 
     ImU.PrintImg(max_responses,'max_responses')
-    
-    return max_responses
+      
+    return 0#max_responses
         
 def DetectHE(img, gamma_offset=0, silence=False):
     

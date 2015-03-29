@@ -64,7 +64,7 @@ for i in range(1):#range(names.shape[0]):
     
     #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
    
-    #ImageProcessing.MatchedFilter(g)
+    ImageProcessing.MatchedFilter(g)
     ImageProcessing.MatchedFilter2(g)
    
     #ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
