@@ -175,6 +175,9 @@ def MatchedFilter(img):
     kernel_x = np.ndarray( shape=(5,5), dtype="int" )
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
+    
+    img = cv2.GaussianBlur(img,(5,5),3) 
+   
     kernel_x[0] = [-2, 0, 0, 0, +2]
     kernel_x[1] = [-2, 0, 0, 0, +2]
     kernel_x[2] = [-2, 0, 0, 0, +2]
@@ -192,15 +195,34 @@ def MatchedFilter(img):
     
     x,y=img.shape
     dst= np.ndarray( shape=(x,y), dtype="uint8" )    
-    
+    responses=list()
+    #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
+    #i=0
     for theta in thetas:
         kernel = kernel_x*math.cos(theta) + kernel_y*math.sin(theta)
         
         dst = cv2.filter2D(img,-1,kernel) #-1 means the same depth as original image
+       # responses[i]=dst
+        #i=i+1        
+        responses.append(dst)
         #ret,dst = cv2.threshold(dst,0,127,cv2.THRESH_BINARY)     
         
         #ImU.PrintImg(img,'original')
-        ImU.PrintImg(dst,'filtered')
+        #ImU.PrintImg(dst,'filtered')
+
+    max_responses = np.zeros( shape=(x,y), dtype="uint8" )
+    max_pix=-1
+    for x_pix in range(x-1):
+        for y_pix in range(y-1):
+            
+            for z_pix in range(4-1):
+                if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
+            
+        max_responses[x_pix][y_pix]=  max_pix
+        max_pix=-1  
+    
+    ImU.PrintImg(max_responses,'max_responses')
+    return 0
           
         
 def DetectHE(img, gamma_offset=0, silence=False):
