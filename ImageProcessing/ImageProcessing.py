@@ -256,8 +256,9 @@ def MatchedFilter2(img):
     kernel_y[2] = [ 0, 0, 0, 0, 0]
     kernel_y[3] = [ 1, 1, 1, 1, 1]
     kernel_y[4] = [+2,+2,+2,+2,+2]
-    kernel = kernel_x   
-    pi= math.pi
+    
+    kernel = np.uint8(kernel_x + kernel_y)   
+
  
     
     thetas= [0, 90,  180,  270 ] 
@@ -270,7 +271,7 @@ def MatchedFilter2(img):
     for theta in thetas:
         
         
-        M = cv2.getRotationMatrix2D((2,2),theta,1) #cv2.getRotationMatrix2D(center, angle, scale) → retval
+        M = cv2.getRotationMatrix2D((3,3),theta,1) #cv2.getRotationMatrix2D(center, angle, scale) → retval
         rot_kernel = cv2.warpAffine(kernel,M,(5,5)) #  cv2.warpAffine(src, M, dsize[, dst[, flags[, borderMode[, borderValue]]]]) → dst 
         
         dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image
