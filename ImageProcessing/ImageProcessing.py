@@ -242,6 +242,7 @@ def MatchedFilter2(img):
     kernel_x = np.ndarray( shape=(5,5), dtype="int" )
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
+   
     
     img = cv2.GaussianBlur(img,(9,9),5) 
    
@@ -257,34 +258,50 @@ def MatchedFilter2(img):
     kernel_y[3] = [ 1, 1, 1, 1, 1]
     kernel_y[4] = [+2,+2,+2,+2,+2]
     
-    kernel = np.uint8(kernel_x + kernel_y)   
+    kernel =kernel_x #+ kernel_y 
 
  
-    
-    thetas= [0, 90,  180,  270 ] 
+    pi=math.pi
+    thetas= [0.5*pi]#, 0.5*pi,  1*pi,  1.5*pi ] 
     
     x,y=img.shape
-    dst= np.ndarray( shape=(x,y), dtype="uint8" )    
+    dst= np.ndarray( shape=(x,y), dtype="uint8" )
+    rot_kernel = np.zeros(shape=(5,5), dtype="int" )
+     
     responses=list()
     #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
     #i=0
+    
     for theta in thetas:
         
+        R=[ [math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta) ] ] #rotation matrix
         
-        M = cv2.getRotationMatrix2D((3,3),theta,1) #cv2.getRotationMatrix2D(center, angle, scale) → retval
-        rot_kernel = cv2.warpAffine(kernel,M,(5,5)) #  cv2.warpAffine(src, M, dsize[, dst[, flags[, borderMode[, borderValue]]]]) → dst 
+        R=np.asarray(R)
         
-        dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image
-           
+        for xx in range(5):
+            for yy in range(5):
+                
+                a= np.asarray ([ xx, yy  ])
+                
+                
+                a= a+5 # translate
+                b = R.dot (a.transpose())
+                b= b-5
+                if b.all()>=0 and b.all <=5:
+                    rot_kernel[b[0]][b[1]]=kernel[xx][yy]
+        
+   
+        
+        dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
         responses.append(dst)
        
-
+    # Find max responses
     max_responses = np.zeros( shape=(x,y), dtype="uint8" )
     max_pix=-1
     for x_pix in range(x):
         for y_pix in range(y):
             
-            for z_pix in range(4):
+            for z_pix in range(len(thetas)):
                 if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
             
             max_responses[x_pix][y_pix]=  max_pix
