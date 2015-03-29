@@ -76,10 +76,12 @@ for i in range(1):#range(names.shape[0]):
     #cropped_image = ImageProcessing.CropImage(g, features, silence=True)
     
     #ImageProcessing.TriangularMasking()
+    '''
     plt.figure()
     image = mpimg.imread(img_name)
     plt.imshow(image)
     plt.show()
+    '''
     
     print '--->Index=%d ,Image Name:%s, Image label=%d '% (i, name,label)
         

@@ -6,9 +6,10 @@ import cv2
  
  
 def PrintImg(im_r, meassage):
-    plt.axis('off')
+
     plt.figure()
     plt.title(meassage)
+    plt.axis('off')
     plt.imshow(im_r, cmap = 'gray')
     plt.show()
 

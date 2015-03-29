@@ -176,18 +176,18 @@ def MatchedFilter(img):
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
     
-    img = cv2.GaussianBlur(img,(5,5),3) 
+    img = cv2.GaussianBlur(img,(7,7),5) 
    
-    kernel_x[0] = [-2, 0, 0, 0, +2]
-    kernel_x[1] = [-2, 0, 0, 0, +2]
-    kernel_x[2] = [-2, 0, 0, 0, +2]
-    kernel_x[3] = [-2, 0, 0, 0, +2]
-    kernel_x[4] = [-2, 0, 0, 0, +2]        
+    kernel_x[0] = [-2, -1, 0, 1, +2]
+    kernel_x[1] = [-2, -1, 0, 1, +2]
+    kernel_x[2] = [-2, -1, 0, 1, +2]
+    kernel_x[3] = [-2, -1, 0, 1, +2]
+    kernel_x[4] = [-2, -1, 0, 1, +2]       
     
     kernel_y[0] = [-2,-2,-2,-2,-2]
-    kernel_y[1] = [ 0, 0, 0, 0, 0]
+    kernel_y[1] = [-1,-1,-1,-1,-1]
     kernel_y[2] = [ 0, 0, 0, 0, 0]
-    kernel_y[3] = [ 0, 0, 0, 0, 0]
+    kernel_y[3] = [ 1, 1, 1, 1, 1]
     kernel_y[4] = [+2,+2,+2,+2,+2]
     
     pi= math.pi
@@ -218,11 +218,14 @@ def MatchedFilter(img):
             for z_pix in range(4-1):
                 if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
             
-        max_responses[x_pix][y_pix]=  max_pix
-        max_pix=-1  
-    
+            max_responses[x_pix][y_pix]=  max_pix
+            max_pix=-1
+            
+            
+    #ret,max_responses = cv2.threshold(max_responses,50,127,cv2.THRESH_BINARY) 
     ImU.PrintImg(max_responses,'max_responses')
-    return 0
+    
+    return max_responses
           
         
 def DetectHE(img, gamma_offset=0, silence=False):
