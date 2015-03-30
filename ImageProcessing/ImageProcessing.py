@@ -244,8 +244,8 @@ def MatchedFilter2(img):
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
    
-    img = cv2.GaussianBlur(img,(3,3),8)
-    img = cv2.GaussianBlur(img,(7,7),3)
+    img = cv2.GaussianBlur(img,(3,3),10)
+    img = cv2.GaussianBlur(img,(7,7),4)
     img = cv2.GaussianBlur(img,(15,5),2) 
     
     
