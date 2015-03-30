@@ -13,8 +13,12 @@ def PrintImg(im_r, meassage):
     plt.imshow(im_r, cmap = 'gray')
     plt.show()
 
-def ImageRescale(im_r, TARGET_MPIXELS=1e6):   
-    height, width, depth = im_r.shape
+def ImageRescale(im_r, TARGET_MPIXELS=1e6, GRAY=False):   
+    if GRAY==False:
+        height, width, depth = im_r.shape
+    else: 
+        height, width = im_r.shape
+        
     mpixels=height*width
     
     lin_scale=np.sqrt( float(mpixels/TARGET_MPIXELS) )

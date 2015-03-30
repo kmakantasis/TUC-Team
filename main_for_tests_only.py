@@ -40,7 +40,7 @@ for i in range(1):#range(names.shape[0]):
     #name ='10321_left' #HE not done
     #name ='19116_right' #done
 
-    #name ='9951_right'
+    #name ='2273_right'
     #name ='10904_right'
     #name ='11267_left'
     #name ='1639_left' #check
@@ -64,7 +64,7 @@ for i in range(1):#range(names.shape[0]):
     
     #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
    
-    ImageProcessing.MatchedFilter(g)
+    #ImageProcessing.MatchedFilter(g)
     ImageProcessing.MatchedFilter2(g)
    
     #ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
@@ -77,6 +77,7 @@ for i in range(1):#range(names.shape[0]):
     #cropped_image = ImageProcessing.CropImage(g, features, silence=True)
     
     #ImageProcessing.TriangularMasking()
+    
     
     plt.figure()
     image = mpimg.imread(img_name)

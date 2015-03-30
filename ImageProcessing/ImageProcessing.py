@@ -238,13 +238,17 @@ def MatchedFilter2(img):
     '''
    
     '''
+    #img=ImU.ImageRescale(img, TARGET_MPIXELS=1e6, GRAY=True)
     #kernel = np.ones((5,5),np.float32)/25
     kernel_x = np.ndarray( shape=(5,5), dtype="int" )
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
    
+    img = cv2.GaussianBlur(img,(3,3),8)
+    img = cv2.GaussianBlur(img,(7,7),3)
+    img = cv2.GaussianBlur(img,(15,5),2) 
     
-    img = cv2.GaussianBlur(img,(31,31),5) 
+    
     kernel_zero = np.zeros(shape=(1,16), dtype="int")
     kernel_line = np.zeros(shape=(1,16), dtype="int")
     kernel_line = np.array([0, 4, 3, 2, 1, -2, -5, -6, -5, -2, 1 ,2, 3, 4, 0, 0])
@@ -256,6 +260,7 @@ def MatchedFilter2(img):
             kernel_zero,
             kernel_zero,
             kernel_line,
+            kernel_line,                    
             kernel_line,
             kernel_line,
             kernel_line,
@@ -263,8 +268,7 @@ def MatchedFilter2(img):
             kernel_line,
             kernel_line,
             kernel_line,
-            kernel_line,
-            kernel_line,
+            kernel_line, 
             kernel_zero,
             kernel_zero,
             kernel_zero]   
@@ -272,7 +276,9 @@ def MatchedFilter2(img):
     kernel=np.asarray(kernel).reshape((16,16))
     pi=math.pi
     #thetas= [0, 0.25*pi]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
-    thetas= [0, 45, 90, 135, 180, 225, 270, 315]#, 45, 60]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
+    #thetas= [0, 45, 90, 135, 180, 225, 270 , 315]#, 45, 60]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
+    thetas= [0, 15, 30, 45,60 , 75, 90, 105, 120, 135,150, 165, 180]
+    #thetas= [0, 30,  60,  90, 120, 150, 180]
     
     x,y=img.shape
     dst= np.ndarray( shape=(x,y), dtype="uint8" )
@@ -312,7 +318,7 @@ def MatchedFilter2(img):
         rot_kernel = cv2.warpAffine(kernel,M,(16,16), borderValue=10) # Rotation is done
         #ImU.PrintImg(rot_kernel,'rot kernel') 
         rot_kernel=(rot_kernel.astype(int)-10).astype(int)
-        rot_kernel=rot_kernel/2.
+        rot_kernel=rot_kernel/8.
         rot_kernels.append(rot_kernel)
         
         dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
@@ -330,8 +336,8 @@ def MatchedFilter2(img):
             max_responses[x_pix][y_pix]=  max_pix
             max_pix=-1
             
-            
-    #ret,max_responses = cv2.threshold(max_responses,50,127,cv2.THRESH_BINARY) 
+    #ImU.PrintImg(max_responses,'max_responses')       
+    #ret,max_responses = cv2.threshold(max_responses,24,127,cv2.THRESH_BINARY) 
     ImU.PrintImg(max_responses,'max_responses')
       
     return 0#max_responses
