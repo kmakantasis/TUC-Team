@@ -13,7 +13,7 @@ import ImageUtils as ImU
 import MaskingUtils as Msk
 
 
-def Dilate(img, DIL=5, CLO=4, silence=True):
+def Dilate(img, DIL=5, silence=True):
     dilate=img
     for i in range(1,DIL):
         kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i,i+1))
@@ -21,9 +21,9 @@ def Dilate(img, DIL=5, CLO=4, silence=True):
         
     return dilate
     
-def Erode(img, EROD=2, silence=True):
+def Erode(img, EROD=2, KERNEL=3):
   
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(KERNEL,KERNEL))
     erode = cv2.erode(img,kernel,iterations = EROD)
         
     return erode
@@ -34,6 +34,13 @@ def Closing(img, CLO=2, silence=True):
         kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i*3,1+i*3))
         closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=1)
     return closing
+    
+def Opening(img, OPEN=2, silence=True):   
+    for i in range(1,OPEN):
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i,1+i))
+        opening = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+    return opening
+    
     
 def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     """            
@@ -261,18 +268,20 @@ def find_circles(img):
         
 #-----------------------------very experimental zone end ---------------    
 def MatchedFilter2(img):
-    '''
    
-    '''
     #img=ImU.ImageRescale(img, TARGET_MPIXELS=1e6, GRAY=True)
     #kernel = np.ones((5,5),np.float32)/25
+   
+
     kernel_x = np.ndarray( shape=(5,5), dtype="int" )
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
-   
-    img = cv2.GaussianBlur(img,(3,3),10)
+    img=Erode(img, EROD=4)
+    img = cv2.GaussianBlur(img,(3,3),8)
     img = cv2.GaussianBlur(img,(7,7),4)
-    img = cv2.GaussianBlur(img,(15,15),2) 
+    img = cv2.GaussianBlur(img,(15,15),2)
+
+ 
     
     
     kernel_zero = np.zeros(shape=(1,16), dtype="int")
@@ -336,7 +345,7 @@ def MatchedFilter2(img):
     #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
     #i=0
     
-    kernel=np.uint8(kernel2 +10)
+    kernel=np.uint8(kernel +10)
     rot_kernels=list()
     for theta in thetas:
         ''' 
@@ -366,7 +375,7 @@ def MatchedFilter2(img):
         rot_kernel = cv2.warpAffine(kernel,M,(16,16), borderValue=10) # Rotation is done
         #ImU.PrintImg(rot_kernel,'rot kernel') 
         rot_kernel=(rot_kernel.astype(int)-10).astype(int)
-        rot_kernel=rot_kernel/8.
+        rot_kernel=rot_kernel/4.
         rot_kernels.append(rot_kernel)
         
         dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
@@ -387,6 +396,12 @@ def MatchedFilter2(img):
     #ImU.PrintImg(max_responses,'max_responses')       
     #ret,max_responses = cv2.threshold(max_responses,24,127,cv2.THRESH_BINARY) 
     ImU.PrintImg(max_responses,'max_responses')
+ 
+   
+    ret, otsu = cv2.threshold( max_responses,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    ImU.PrintImg(otsu,'otsu')
+
+
      
     return max_responses
         
