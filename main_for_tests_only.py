@@ -35,7 +35,7 @@ for i in range(1):#range(names.shape[0]):
     #name='229_left' #not solved
     #name='16_right'
     
-    #name='444_right'
+    #name='2916_right'
 
     #name='456_left' 
     #name='1430_left'
@@ -53,6 +53,8 @@ for i in range(1):#range(names.shape[0]):
 
 
     img_name = '../data/train_resized/%s.jpg'%name
+    
+    #img_name = './blob.jpg'
     img_name_temp = '../%s.jpg'%name
     
     img = ImageUtils.LoadImage(img_name)
@@ -68,20 +70,16 @@ for i in range(1):#range(names.shape[0]):
     #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
    
     #ImageProcessing.MatchedFilter(g)
-   
-   
-
-    
-    
-    # ImageProcessing.find_circles(img)
+  
+    #circles=ImageProcessing.find_circles(g)
     
     #ret = cv2.imwrite(img_name_temp, vessels)
-    tophat=ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
+    #tophat=ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
+    ImageProcessing.DetectVesselsFast(g)
     
-    vessels_mask=ImageProcessing.MatchedFilter2(g)
-    ImU.PrintImg(vessels_mask,'vessels_mask')
-    g2=g*vessels_mask
-    ImU.PrintImg(g2,'g filtered')
+    #vessels_mask=ImageProcessing.MatchedFilter2(g)
+   # ImU.PrintImg(vessels_mask,'vessels_mask')
+
     
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)

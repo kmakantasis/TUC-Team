@@ -244,23 +244,82 @@ def MatchedFilter(img):
     return max_responses
 ##------------------------------------------------------very experimental zone
  
-          
+def DetectVesselsFast(img):
+    img = cv2.GaussianBlur(img,(3,3),8)
+    img = cv2.GaussianBlur(img,(7,7),4)
+    img = cv2.GaussianBlur(img,(15,15),2)
+    adaptiveThreshold=cv2.adaptiveThreshold(img,5,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,2)
+    ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
+ 
+    return adaptiveThreshold
+         
 def find_circles(img):
-    img=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    
+ 
+    #img = cv2.equalizeHist(img)
+    
+    #ret,otsu = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'THRESH_OTSU')
+    
 
-    ret,thresh = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    params = cv2.SimpleBlobDetector_Params()
+ 
+     # Change thresholds
+    params.minThreshold = 30;
+    params.maxThreshold = 100;
+   
+    # Filter by Circularity
+    params.filterByCircularity = True
+    params.minCircularity = 0.6   
+    
+    # Filter by Convexity
+    params.filterByConvexity = True
+    params.minConvexity = 0.6
+    
+    # Filter by Area.
+    params.filterByArea = True
+    params.minArea = 300
+    params.maxArea = 1200
+      
+    detector = cv2.SimpleBlobDetector(params)
+     
+    # Detect blobs.
+    keypoints = detector.detect(img)
+     
+    # Draw detected blobs as red circles.
+    # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
+    im_with_keypoints = cv2.drawKeypoints(img, keypoints, np.array([]), (0,0,250), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    im_with_keypoints = cv2.drawKeypoints(im_with_keypoints, keypoints, np.array([]), (0,255,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    
+    ImU.PrintImg(im_with_keypoints,'im_with_keypoints')
+        
+    
+    img = cv2.bilateralFilter(img, 11, 17, 17)
+ 
+    canny = cv2.Canny(img, 30, 60,  9) 
+    ImU.PrintImg(canny,'canny')
+    
+    laplacian = abs( cv2.Laplacian(img,cv2.CV_32F,ksize=9))
+    ImU.PrintImg(laplacian,'laplacian')
+    
+
+    
+    sobel = abs(cv2.Sobel(img,cv2.CV_32F,1,1,ksize=31) )
+    ImU.PrintImg(sobel,'sobel')
+    
+    
+ 
+
+    return img
+    
     fg = cv2.erode(thresh,None,iterations = 2)
     bgt = cv2.dilate(thresh,None,iterations = 3)
     ret,bg = cv2.threshold(bgt,1,128,1)
     marker = cv2.add(fg,bg)
     marker32 =marker.astype(np.int32)
     
-    #cv2.watershed(img,marker32)
-
-    distance = ndimage.distance_transform_edt(img)    
-    labels = watershed(-distance, marker, mask=img)
-    ImU.PrintImg(labels,'labels')
-    m = cv2.convertScaleAbs(labels)
+ 
+    m = cv2.convertScaleAbs(marker)
     ret,thresh = cv2.threshold(m,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     res = cv2.bitwise_and(img,img,mask = thresh)
     ImU.PrintImg(res,'res')
@@ -271,19 +330,17 @@ def MatchedFilter2(img):
    
     #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
     #kernel = np.ones((5,5),np.float32)/25
-   
 
     kernel_x = np.ndarray( shape=(5,5), dtype="int" )
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
     #img=Erode(img, EROD=4)
-    img = cv2.GaussianBlur(img,(3,3),8)
-    img = cv2.GaussianBlur(img,(7,7),4)
+    
+    img = cv2.GaussianBlur(img,(3,3),6)
+    img = cv2.GaussianBlur(img,(7,7),3)
     img = cv2.GaussianBlur(img,(15,15),2)
+    
 
- 
-    
-    
     kernel_zero = np.zeros(shape=(1,16), dtype="int")
     kernel_line = np.zeros(shape=(1,16), dtype="int")
     kernel_line = np.array([0, 4, 3, 2, 1, -2, -5, -6, -5, -2, 1 ,2, 3, 4, 0, 0])
@@ -310,26 +367,10 @@ def MatchedFilter2(img):
             kernel_zero,
             kernel_zero,
             kernel_zero]   
-
-    kernel2=[kernel_zero,
-            kernel_zero,
-            kernel_zero,
-            kernel2_line,
-            kernel2_line,                    
-            kernel2_line,
-            kernel2_line,
-            kernel2_line,
-            kernel2_line,
-            kernel2_line,
-            kernel2_line,
-            kernel2_line,
-            kernel2_line, 
-            kernel_zero,
-            kernel_zero,
-            kernel_zero] 
+ 
 
     kernel=np.asarray(kernel).reshape((16,16))
-    kernel2=np.asarray(kernel).reshape((16,16))
+ 
     
     pi=math.pi
     #thetas= [0, 0.25*pi]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
@@ -396,7 +437,11 @@ def MatchedFilter2(img):
     #ImU.PrintImg(max_responses,'max_responses')       
     #ret,max_responses = cv2.threshold(max_responses,24,127,cv2.THRESH_BINARY) 
      
-    max_responses=Dilate(max_responses, DIL=2, KERNEL=2)  
+    max_responses=Dilate(max_responses, DIL=1, KERNEL=3)
+    max_responses=Dilate(max_responses, DIL=1, KERNEL=6) 
+    
+ 
+    
    # max_responses=Erode(max_responses, EROD=1)
   
     #ImU.PrintImg(max_responses,'Erode/dilate')
