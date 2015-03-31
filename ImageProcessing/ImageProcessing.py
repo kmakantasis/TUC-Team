@@ -184,40 +184,62 @@ def MatchedFilter(img):
     '''
     M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
     rot_g = cv2.warpAffine(g_original,M,(cols,rows)) # Rotation is done    
+    
     '''
-    kernel = np.ones((5,5),np.float32)/25
-    kernel_x = np.ndarray( shape=(5,5), dtype="int" )
-    kernel_y = np.ndarray( shape=(5,5), dtype="int" )
+    x,y=img.shape
+
+    img = cv2.GaussianBlur(img,(3,3),8) 
+    img = cv2.GaussianBlur(img,(7,7),4) 
     
     
-    img = cv2.GaussianBlur(img,(9,9),5) 
+    #kernel_line =np.ndarray( shape=(1,5), dtype="int" )
+    #kernel_line = np.asarray( [-1, -0, -0, 0, 0, 0, +1] ) #perwitt
+    kernel_line = np.asarray( [-2, 0, 0,  0, +2] ) #perwitt
+    #kernel_line = np.asarray( [-1, -2, -3, -2, -1, 2, +1] ) #sobel
+    
+    smoothing_line  = np.asarray([ 1, 4, 6, 4, 1])
+    gradient_line= np.asarray([ 1, 2, 0,-2,-1])
+    
+    sobel_x= np.multiply.outer (smoothing_line,gradient_line)
+    sobel_y= np.multiply.outer (gradient_line,smoothing_line)
+    
+    KERNEL_SIZE =len(kernel_line)
+    
+    kernel_x  = [
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line ]
    
-    kernel_x[0] = [-2, -1, 0, 1, +2]
-    kernel_x[1] = [-2, -1, 0, 1, +2]
-    kernel_x[2] = [-2, -1, 0, 1, +2]
-    kernel_x[3] = [-2, -1, 0, 1, +2]
-    kernel_x[4] = [-2, -1, 0, 1, +2]       
+    kernel_x=np.asarray(kernel_x).reshape((KERNEL_SIZE,KERNEL_SIZE))
     
-    kernel_y[0] = [-2,-2,-2,-2,-2]
-    kernel_y[1] = [-1,-1,-1,-1,-1]
-    kernel_y[2] = [ 0, 0, 0, 0, 0]
-    kernel_y[3] = [ 1, 1, 1, 1, 1]
-    kernel_y[4] = [+2,+2,+2,+2,+2]
+    kernel_y = [
+            kernel_line.transpose(),
+            kernel_line.transpose(),
+            kernel_line.transpose(),
+            kernel_line.transpose(),
+            kernel_line.transpose()  ]
+
+    kernel_y=np.asarray(kernel_y).reshape((KERNEL_SIZE,KERNEL_SIZE)) 
     
     pi= math.pi
-    #thetas= [0, 0.25*pi, 0.5*pi, 0.75*pi, 1*pi, 1.25*pi, 1.5*pi, 1.75*pi]
+    #thetas= [0, 0.25*pi, 0.5*pi, 0.75*pi, 1*pi]
+    #thetas= np.asarray([0,  0.125 ,  0.25 , 0.375 , 0.5 , 0.625, 0.75, 1 ] )
+    thetas= np.asarray([0, 0.5, 1 ] )
+    thetas=thetas*pi
     
-    thetas= [0, 0.5*pi,  1*pi,  1.5*pi ] 
-    
-    x,y=img.shape
+
     dst= np.ndarray( shape=(x,y), dtype="uint8" )    
     responses=list()
     #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
     #i=0
     for theta in thetas:
-        kernel = kernel_x*math.cos(theta) + kernel_y*math.sin(theta)
+        #kernel = kernel_x*math.cos(theta) + kernel_y*math.sin(theta)
+        kernel = sobel_x*math.cos(theta) + sobel_y*math.sin(theta)/10.
         
         dst = cv2.filter2D(img,-1,kernel) #-1 means the same depth as original image
+      
        # responses[i]=dst
         #i=i+1        
         responses.append(dst)
@@ -231,27 +253,25 @@ def MatchedFilter(img):
     for x_pix in range(x):
         for y_pix in range(y):
             
-            for z_pix in range(4):
+            for z_pix in range(len(thetas)):
                 if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
             
             max_responses[x_pix][y_pix]=  max_pix
             max_pix=-1
-            
-            
-    #ret,max_responses = cv2.threshold(max_responses,50,127,cv2.THRESH_BINARY) 
-    ImU.PrintImg(max_responses,'max_responses')
+
+    #
+    ImU.PrintImg(max_responses,'max_responses ')
+    #ImU.PrintImg(otsu,'max_responses otsu')
     
+    blend=cv2.add(max_responses,img)
+    ImU.PrintImg(blend ,'img +max_responses ')
+    #ret, otsu = cv2.threshold( blend,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+ 
+  
     return max_responses
 ##------------------------------------------------------very experimental zone
  
-def DetectVesselsFast(img):
-    img = cv2.GaussianBlur(img,(3,3),8)
-    img = cv2.GaussianBlur(img,(7,7),4)
-    img = cv2.GaussianBlur(img,(15,15),2)
-    adaptiveThreshold=cv2.adaptiveThreshold(img,5,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,2)
-    ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
- 
-    return adaptiveThreshold
+
          
 def find_circles(img):
     
@@ -288,7 +308,7 @@ def find_circles(img):
      
     # Draw detected blobs as red circles.
     # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
-    im_with_keypoints = cv2.drawKeypoints(img, keypoints, np.array([]), (0,0,250), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    im_with_keypoints = cv2.drawKeypoints(img, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     im_with_keypoints = cv2.drawKeypoints(im_with_keypoints, keypoints, np.array([]), (0,255,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     
     ImU.PrintImg(im_with_keypoints,'im_with_keypoints')
@@ -307,178 +327,13 @@ def find_circles(img):
     sobel = abs(cv2.Sobel(img,cv2.CV_32F,1,1,ksize=31) )
     ImU.PrintImg(sobel,'sobel')
     
-    
- 
-
     return img
-    
-    fg = cv2.erode(thresh,None,iterations = 2)
-    bgt = cv2.dilate(thresh,None,iterations = 3)
-    ret,bg = cv2.threshold(bgt,1,128,1)
-    marker = cv2.add(fg,bg)
-    marker32 =marker.astype(np.int32)
-    
- 
-    m = cv2.convertScaleAbs(marker)
-    ret,thresh = cv2.threshold(m,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    res = cv2.bitwise_and(img,img,mask = thresh)
-    ImU.PrintImg(res,'res')
-    return res
-        
-#-----------------------------very experimental zone end ---------------    
-def MatchedFilter2(img):
-   
-    #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
-    #kernel = np.ones((5,5),np.float32)/25
-
-    kernel_x = np.ndarray( shape=(5,5), dtype="int" )
-    kernel_y = np.ndarray( shape=(5,5), dtype="int" )
-    
-    #img=Erode(img, EROD=4)
-    
-    img = cv2.GaussianBlur(img,(3,3),6)
-    img = cv2.GaussianBlur(img,(7,7),3)
-    img = cv2.GaussianBlur(img,(15,15),2)
-    
-
-    kernel_zero = np.zeros(shape=(1,16), dtype="int")
-    kernel_line = np.zeros(shape=(1,16), dtype="int")
-    kernel_line = np.array([0, 4, 3, 2, 1, -2, -5, -6, -5, -2, 1 ,2, 3, 4, 0, 0])
-    kernel_line.shape=(1,16)
-    
-    kernel2_line = np.array([0, 4, 4, 0, 0, -2, -4, -4, -4, -2, 0 ,0, 4, 4, 0, 0])
-    kernel2_line.shape=(1,16) 
 
  
-    
-    kernel=[kernel_zero,
-            kernel_zero,
-            kernel_zero,
-            kernel_line,
-            kernel_line,                    
-            kernel_line,
-            kernel_line,
-            kernel_line,
-            kernel_line,
-            kernel_line,
-            kernel_line,
-            kernel_line,
-            kernel_line, 
-            kernel_zero,
-            kernel_zero,
-            kernel_zero]   
- 
-
-    kernel=np.asarray(kernel).reshape((16,16))
- 
-    
-    pi=math.pi
-    #thetas= [0, 0.25*pi]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
-    #thetas= [0, 45, 90, 135, 180, 225, 270 , 315]#, 45, 60]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
-    thetas= [0, 15, 30, 45,60 , 75, 90, 105, 120, 135,150, 165, 180]
-    #thetas= [0, 30,  60,  90, 120, 150, 180]
-    
-    x,y=img.shape
-    dst= np.ndarray( shape=(x,y), dtype="uint8" )
-    rot_kernel = np.zeros(shape=(16,16), dtype="int" )
-     
-    responses=list()
-    #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
-    #i=0
-    
-    kernel=np.uint8(kernel +10)
-    rot_kernels=list()
-    for theta in thetas:
-        ''' 
-        R=[ [math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta) ] ] #rotation matrix
         
-        R=np.asarray(R)
-        
-        for xx in range(16):
-            for yy in range(16):
-                
-                a= np.asarray ([ xx, yy  ])
-                
-                
-                a= a+8 # translate
-                b = R.dot (a.transpose())
-                b= b-8
-                if b.all()>=0 and b.all <=16:
-                    rot_kernel[b[0]][b[1]]=kernel[xx][yy]
-        
-   
-        ImU.PrintImg(rot_kernel + 15,'rot kernel')
-        
-        
-        '''
+#-----------------------------very experimental zone end ---------------
 
-        M = cv2.getRotationMatrix2D((8,8),theta,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
-        rot_kernel = cv2.warpAffine(kernel,M,(16,16), borderValue=10) # Rotation is done
-        #ImU.PrintImg(rot_kernel,'rot kernel') 
-        rot_kernel=(rot_kernel.astype(int)-10).astype(int)
-        rot_kernel=rot_kernel/4.
-        rot_kernels.append(rot_kernel)
-        
-        dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
-        responses.append(dst)
-              
-    # Find max responses
-    max_responses = np.zeros( shape=(x,y), dtype="uint8" )
-    max_pix=-1
-    for x_pix in range(x):
-        for y_pix in range(y):
-            
-            for z_pix in range(len(thetas)):
-                if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
-            
-            max_responses[x_pix][y_pix]=  max_pix
-            max_pix=-1
-            
-    #ImU.PrintImg(max_responses,'max_responses')       
-    #ret,max_responses = cv2.threshold(max_responses,24,127,cv2.THRESH_BINARY) 
-     
-    max_responses=Dilate(max_responses, DIL=1, KERNEL=3)
-    max_responses=Dilate(max_responses, DIL=1, KERNEL=6) 
-    
- 
-    
-   # max_responses=Erode(max_responses, EROD=1)
-  
-    #ImU.PrintImg(max_responses,'Erode/dilate')
- 
-   
-    ret, otsu = cv2.threshold( max_responses,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    #ImU.PrintImg(otsu,'otsu')
-
-
-     
-    return otsu/otsu.max()
-        
-def DetectHE(img, gamma_offset=0, silence=False):
-    
-    img=HistAdjust(img, gamma_offset=0, silence=True)
-    #img=ImU.GammaCorrection(img,4)
-
-    dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 
-    circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=True)
-    
-    x,y= Msk.Disc_Detect(img,'WHITE')
-    optic_disc_mask= Msk.DiscMask(circular_mask, x,y,65)
-    total_mask= total_mask*optic_disc_mask #*vessels_mask
-    
-    #opening=255-opening
-    # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
-    #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100,  EQ=True, silence=True) #default=opening
-    #opening=ImU.ContrastCorrection(opening,1) 
-    
-   # tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15,EQ=False, silence=True)
-   # tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=20,EQ=False, silence=True)
-    
-    return tophat
-
-
-def DetectVessels(img, gamma_offset=0, silence=True):
+def DetectTesting(img, gamma_offset=0, silence=True):
     
     img=HistAdjust(img, gamma_offset=0, silence=True)
     img=ImU.GammaCorrection(img,0.7)
@@ -511,7 +366,139 @@ def DetectVessels(img, gamma_offset=0, silence=True):
     
     #tophat, mask2 = FeaturesDetection(img, total_mask, EQ=False,  silence=False)
     return thresh
+        
+def DetectVesselsFast(img):
+    img = cv2.GaussianBlur(img,(3,3),8)
+    img = cv2.GaussianBlur(img,(7,7),4)
+    img = cv2.GaussianBlur(img,(15,15),2)
+    adaptiveThreshold=cv2.adaptiveThreshold(img,5,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,2)
+    #ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
+ 
+    return adaptiveThreshold        
+        
+        
+def DetectVessels(img):
+   
+    #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
+    #kernel = np.ones((5,5),np.float32)/25
+    #img=Erode(img, EROD=4)
     
+    img = cv2.GaussianBlur(img,(3,3),6)
+    img = cv2.GaussianBlur(img,(7,7),3)
+    img = cv2.GaussianBlur(img,(15,15),2)
+    
+
+    kernel_zero = np.zeros(shape=(1,16), dtype="int")
+    kernel_line = np.zeros(shape=(1,16), dtype="int")
+    kernel_line = np.array([0, 4, 3, 2, 1, -2, -5, -6, -5, -2, 1 ,2, 3, 4, 0, 0])
+    kernel_line.shape=(1,16)
+ 
+
+    kernel=[kernel_zero,
+            kernel_zero,
+            kernel_zero,
+            kernel_line,
+            kernel_line,                    
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line, 
+            kernel_zero,
+            kernel_zero,
+            kernel_zero]   
+ 
+    kernel=np.asarray(kernel).reshape((16,16))
+ 
+    pi=math.pi
+    #thetas= [0, 0.25*pi]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
+    #thetas= [0, 45, 90, 135, 180, 225, 270 , 315]#, 45, 60]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
+    thetas= [0, 15, 30, 45,60 , 75, 90, 105, 120, 135,150, 165, 180]
+    #thetas= [0, 30,  60,  90, 120, 150, 180]
+    
+    x,y=img.shape
+    dst= np.ndarray( shape=(x,y), dtype="uint8" )
+    rot_kernel = np.zeros(shape=(16,16), dtype="int" )
+     
+    responses=list()
+    #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
+    #i=0
+    
+    kernel=np.uint8(kernel +10)
+    rot_kernels=list()
+    for theta in thetas:
+   
+        M = cv2.getRotationMatrix2D((8,8),theta,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
+        rot_kernel = cv2.warpAffine(kernel,M,(16,16), borderValue=10) # Rotation is done
+        #ImU.PrintImg(rot_kernel,'rot kernel') 
+        rot_kernel=(rot_kernel.astype(int)-10).astype(int)
+        rot_kernel=rot_kernel/4.
+        rot_kernels.append(rot_kernel)
+        
+        dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
+        responses.append(dst)
+              
+    # Find max responses
+    max_responses = np.zeros( shape=(x,y), dtype="uint8" )
+    max_pix=-1
+    for x_pix in range(x):
+        for y_pix in range(y):
+            
+            for z_pix in range(len(thetas)):
+                if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
+            
+            max_responses[x_pix][y_pix]=  max_pix
+            max_pix=-1
+            
+    #ImU.PrintImg(max_responses,'max_responses')       
+    #ret,max_responses = cv2.threshold(max_responses,24,127,cv2.THRESH_BINARY) 
+     
+    max_responses=Dilate(max_responses, DIL=1, KERNEL=3)
+    max_responses=Dilate(max_responses, DIL=1, KERNEL=6)   
+
+    #max_responses=Erode(max_responses, EROD=1)
+    #ImU.PrintImg(max_responses,'Erode/dilate')
+ 
+    ret, otsu = cv2.threshold( max_responses,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'otsu')
+  
+    return otsu/otsu.max()
+        
+def DetectHE(img, gamma_offset=0, silence=False):
+    
+    img=HistAdjust(img, gamma_offset=0, silence=True)
+    #img=ImU.GammaCorrection(img,4)
+
+    dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 
+    circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=True)
+ 
+    #ImU.PrintImg(total_mask,'circular_mask')
+    
+    x,y= Msk.Disc_Detect(img,'WHITE')
+    optic_disc_mask= Msk.DiscMask(img, x,y,70)
+    
+    #ImU.PrintImg(optic_disc_mask,'optic_disc_mask')
+    
+    vessels_mask= DetectVesselsFast(img)/DetectVesselsFast(img).max()
+    #ImU.PrintImg(vessels_mask,'vessels_mask')
+    
+    total_mask= optic_disc_mask*vessels_mask #*total_mask*
+    total_mask=total_mask/total_mask.max()
+    ImU.PrintImg(total_mask,'total_mask')
+    
+    #opening=255-opening
+    # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
+    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=150, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
+    #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100,  EQ=True, silence=True) #default=opening
+    #opening=ImU.ContrastCorrection(opening,1) 
+    
+    #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15,EQ=False, silence=True)
+    #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=80, TP_MASK=True, KERNEL=20,EQ=False, silence=True)
+    
+    return tophat
 
 def CropImage(img, features, silence=True):
     ret,thresh_flip = cv2.threshold(img,10,1,cv2.THRESH_BINARY)  

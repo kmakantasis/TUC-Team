@@ -74,8 +74,8 @@ for i in range(1):#range(names.shape[0]):
     #circles=ImageProcessing.find_circles(g)
     
     #ret = cv2.imwrite(img_name_temp, vessels)
-    #tophat=ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
-    ImageProcessing.DetectVesselsFast(g)
+    tophat=ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
+    #ImageProcessing.MatchedFilter(g)
     
     #vessels_mask=ImageProcessing.MatchedFilter2(g)
    # ImU.PrintImg(vessels_mask,'vessels_mask')
