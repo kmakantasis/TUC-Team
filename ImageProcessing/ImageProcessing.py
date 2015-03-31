@@ -13,11 +13,11 @@ import ImageUtils as ImU
 import MaskingUtils as Msk
 
 
-def Dilate(img, DIL=5, silence=True):
+def Dilate(img, DIL=2, KERNEL=3):
     dilate=img
     for i in range(1,DIL):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i,i+1))
-        dilate  = cv2.dilate(dilate,kernel,iterations = 1)
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(KERNEL,KERNEL))
+        dilate  = cv2.dilate(dilate,kernel,iterations = DIL)
         
     return dilate
     
@@ -269,14 +269,14 @@ def find_circles(img):
 #-----------------------------very experimental zone end ---------------    
 def MatchedFilter2(img):
    
-    #img=ImU.ImageRescale(img, TARGET_MPIXELS=1e6, GRAY=True)
+    #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
     #kernel = np.ones((5,5),np.float32)/25
    
 
     kernel_x = np.ndarray( shape=(5,5), dtype="int" )
     kernel_y = np.ndarray( shape=(5,5), dtype="int" )
     
-    img=Erode(img, EROD=4)
+    #img=Erode(img, EROD=4)
     img = cv2.GaussianBlur(img,(3,3),8)
     img = cv2.GaussianBlur(img,(7,7),4)
     img = cv2.GaussianBlur(img,(15,15),2)
@@ -395,15 +395,19 @@ def MatchedFilter2(img):
             
     #ImU.PrintImg(max_responses,'max_responses')       
     #ret,max_responses = cv2.threshold(max_responses,24,127,cv2.THRESH_BINARY) 
-    ImU.PrintImg(max_responses,'max_responses')
+     
+    max_responses=Dilate(max_responses, DIL=2, KERNEL=2)  
+   # max_responses=Erode(max_responses, EROD=1)
+  
+    #ImU.PrintImg(max_responses,'Erode/dilate')
  
    
     ret, otsu = cv2.threshold( max_responses,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    ImU.PrintImg(otsu,'otsu')
+    #ImU.PrintImg(otsu,'otsu')
 
 
      
-    return max_responses
+    return otsu/otsu.max()
         
 def DetectHE(img, gamma_offset=0, silence=False):
     
@@ -423,8 +427,8 @@ def DetectHE(img, gamma_offset=0, silence=False):
     #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100,  EQ=True, silence=True) #default=opening
     #opening=ImU.ContrastCorrection(opening,1) 
     
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15,EQ=False, silence=True)
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=20,EQ=False, silence=True)
+   # tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15,EQ=False, silence=True)
+   # tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=20,EQ=False, silence=True)
     
     return tophat
 
@@ -442,8 +446,7 @@ def DetectVessels(img, gamma_offset=0, silence=True):
     erode =  Erode(img, EROD=2, silence=True)    
     
     img=255-erode
-    
-
+  
     #tophat
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
     tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)

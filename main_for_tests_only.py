@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #auto path loading in order to run easily from terminal
 import sys
-import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 
 sys.path.append('./ImageProcessing')
 sys.path.append('./DataCreation')
@@ -10,7 +10,8 @@ import numpy
 import ImageProcessing
 import ImageUtils
 import LoadData
-
+import ImageUtils as ImU
+import numpy as np
 
 
 names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[1, 2,3,4], number_of_data=[300,300,300,300], LRB='both')
@@ -33,7 +34,8 @@ for i in range(1):#range(names.shape[0]):
     
     #name='229_left' #not solved
     #name='16_right'
-   # name='2532_left'
+    
+    #name='444_right'
 
     #name='456_left' 
     #name='1430_left'
@@ -66,11 +68,20 @@ for i in range(1):#range(names.shape[0]):
     #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
    
     #ImageProcessing.MatchedFilter(g)
-    vessels=ImageProcessing.MatchedFilter2(g)
+   
+   
+
+    
+    
     # ImageProcessing.find_circles(img)
     
     #ret = cv2.imwrite(img_name_temp, vessels)
-    #ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
+    tophat=ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
+    
+    vessels_mask=ImageProcessing.MatchedFilter2(g)
+    ImU.PrintImg(vessels_mask,'vessels_mask')
+    g2=g*vessels_mask
+    ImU.PrintImg(g2,'g filtered')
     
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
@@ -83,12 +94,12 @@ for i in range(1):#range(names.shape[0]):
     
     
     plt.figure()
-    image = mpimg.imread(img_name)
+    image = plt.imread(img_name)
     plt.imshow(image)
     plt.show()
     
     
-    print '--->Index=%d ,Image Name:%s, Image label=%d '% (i, name,label)
+    print '--->Index=%d ,Image Name:%s, Image label=%d '% (i, name,label) 
         
 '''
     g_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)
