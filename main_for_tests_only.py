@@ -33,6 +33,7 @@ for i in range(1):#range(names.shape[0]):
     
     #name='229_left' #not solved
     #name='16_right'
+   # name='2532_left'
 
     #name='456_left' 
     #name='1430_left'
@@ -65,8 +66,10 @@ for i in range(1):#range(names.shape[0]):
     #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
    
     #ImageProcessing.MatchedFilter(g)
-    ImageProcessing.MatchedFilter2(g)
-   
+    vessels=ImageProcessing.MatchedFilter2(g)
+    # ImageProcessing.find_circles(img)
+    
+    #ret = cv2.imwrite(img_name_temp, vessels)
     #ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
     
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
