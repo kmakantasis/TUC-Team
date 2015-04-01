@@ -14,7 +14,7 @@ import ImageUtils as ImU
 import numpy as np
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[1, 2,3,4], number_of_data=[300,300,300,300], LRB='both')
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[2,3,4], number_of_data=[300,300,300])
 
 names_labels= (names, labels )
 
@@ -36,8 +36,9 @@ for i in range(1):#range(names.shape[0]):
     #name='16_right'
     
     #name='2916_right'
+    
 
-    #name='456_left' 
+    #name='16114_right' 
     #name='1430_left'
     #name='11031_right' #HE done
     #name ='10321_left' #HE not done
@@ -67,14 +68,14 @@ for i in range(1):#range(names.shape[0]):
     
     gray=numpy.uint8(gray)
     
-    #vessels_mask= ImageProcessing.DetectVessels(g, gamma_offset=0, silence=True)
+    vessels_mask= ImageProcessing.DetectVessels(g )
    
     #ImageProcessing.MatchedFilter(g)
   
     #circles=ImageProcessing.find_circles(g)
     
     #ret = cv2.imwrite(img_name_temp, vessels)
-    tophat=ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
+    #tophat=ImageProcessing.DetectHE(g, gamma_offset=0, silence=True)
     #ImageProcessing.MatchedFilter(g)
     
     #vessels_mask=ImageProcessing.MatchedFilter2(g)

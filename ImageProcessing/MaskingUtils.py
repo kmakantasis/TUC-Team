@@ -8,6 +8,20 @@ import ImageProcessing
 
 import cv2
  
+def CircularMaskSimple(img):
+    
+    img_h, img_w = img.shape
+    x= int(img_w/2)
+    y= int(img_h/2)
+ 
+    black = np.ones(img.shape)
+    cv2.circle(black, (x,y), int(0.9*img_h/2), 0, -1)  # -1 to draw filled circles
+    
+
+    mask = 1 -black
+    #ImU.PrintImg(mask,'simple circular mask')
+    return mask
+
  
 def CircularDetectMasking(img, opening, silence=True):
     """            

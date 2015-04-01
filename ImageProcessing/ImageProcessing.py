@@ -372,7 +372,7 @@ def DetectVesselsFast(img):
     img = cv2.GaussianBlur(img,(7,7),4)
     img = cv2.GaussianBlur(img,(15,15),2)
     adaptiveThreshold=cv2.adaptiveThreshold(img,5,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,2)
-    #ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
+    ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
  
     return adaptiveThreshold        
         
@@ -416,8 +416,8 @@ def DetectVessels(img):
     pi=math.pi
     #thetas= [0, 0.25*pi]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
     #thetas= [0, 45, 90, 135, 180, 225, 270 , 315]#, 45, 60]#, 0.5*pi , 0.75*pi,  1*pi,  1.25*pi , 1.5*pi, 1.75*pi ] 
-    thetas= [0, 15, 30, 45,60 , 75, 90, 105, 120, 135,150, 165, 180]
-    #thetas= [0, 30,  60,  90, 120, 150, 180]
+    #thetas= [0, 15, 30, 45,60 , 75, 90, 105, 120, 135,150, 165, 180]
+    thetas= [0, 30,  60,  90, 120, 150, 180]
     
     x,y=img.shape
     dst= np.ndarray( shape=(x,y), dtype="uint8" )
@@ -463,7 +463,7 @@ def DetectVessels(img):
     #ImU.PrintImg(max_responses,'Erode/dilate')
  
     ret, otsu = cv2.threshold( max_responses,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    #ImU.PrintImg(otsu,'otsu')
+    ImU.PrintImg(otsu,'otsu')
   
     return otsu/otsu.max()
         
@@ -476,27 +476,39 @@ def DetectHE(img, gamma_offset=0, silence=False):
     circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=True)
  
     #ImU.PrintImg(total_mask,'circular_mask')
-    
+    simple_mask_cirlualr=Msk.CircularMaskSimple(img)
     x,y= Msk.Disc_Detect(img,'WHITE')
     optic_disc_mask= Msk.DiscMask(img, x,y,70)
     
     #ImU.PrintImg(optic_disc_mask,'optic_disc_mask')
     
     vessels_mask= DetectVesselsFast(img)/DetectVesselsFast(img).max()
-    #ImU.PrintImg(vessels_mask,'vessels_mask')
+    ImU.PrintImg(vessels_mask,'vessels_mask')
     
-    total_mask= optic_disc_mask*vessels_mask #*total_mask*
+    total_mask= optic_disc_mask*vessels_mask*simple_mask_cirlualr #*total_mask*
     total_mask=total_mask/total_mask.max()
-    ImU.PrintImg(total_mask,'total_mask')
+    #ImU.PrintImg(total_mask,'total_mask')
     
     #opening=255-opening
     # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
     tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=150, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
     #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100,  EQ=True, silence=True) #default=opening
     #opening=ImU.ContrastCorrection(opening,1) 
+    ImU.PrintImg(img ,'img')
+    erode=  Erode(img, EROD=1,KERNEL=2)
+    erode=  Opening(erode)
+    erode=  Erode(erode, EROD=1,KERNEL=2)
+    erode=  Opening(erode) 
     
-    #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15,EQ=False, silence=True)
-    #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=80, TP_MASK=True, KERNEL=20,EQ=False, silence=True)
+        
+    ImU.PrintImg(erode ,'erode')
+    #ret,thresh = cv2.threshold(erode,60,127,cv2.THRESH_BINARY)
+    #ImU.PrintImg(thresh,'erode & thresh')
+    
+    #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
+    #gradient = cv2.morphologyEx(erode, cv2.MORPH_BLACKHAT, kernel)
+
+ 
     
     return tophat
 
