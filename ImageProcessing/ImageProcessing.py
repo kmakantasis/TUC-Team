@@ -7,10 +7,14 @@ import cv2
 from scipy.ndimage import label
 from scipy import ndimage
 from skimage.morphology import watershed
+import operator
 
 import ContourProcessing as CntP
 import ImageUtils as ImU
 import MaskingUtils as Msk
+
+from numba import double
+from numba.decorators import jit
 
 
 def Dilate(img, DIL=2, KERNEL=3):
@@ -421,9 +425,9 @@ def DetectVesselsFast(img):
  
     return adaptiveThreshold        
         
-        
+@jit       
 def DetectVessels(img):
-   
+    print "starting Detect Vessels"
     #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
     #kernel = np.ones((5,5),np.float32)/25
     #img=Erode(img, EROD=4)
@@ -475,8 +479,8 @@ def DetectVessels(img):
     
     kernel=np.uint8(kernel +10)
     rot_kernels=[]
-    responses=[]
-    for theta in  np.arange(0, 180 ,30):
+    responses=list()
+    for theta in  thetas: #np.arange(0, 180 ,30):
    
         M = cv2.getRotationMatrix2D((8,8),theta,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
         rot_kernel = cv2.warpAffine(kernel,M,(16,16), borderValue=10) # Rotation is done
@@ -486,18 +490,32 @@ def DetectVessels(img):
         rot_kernels.append(rot_kernel)
         
         dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
-        responses.append(dst)
+        responses.append(dst) #append tuple
         
         
-        
-    
+    responses=np.asarray(responses)     
+    '''   
     max_response = np.zeros_like(img)
     for response in responses:
         np.maximum(max_response, response, max_response)
+    '''        
              
+    max_response = np.zeros( shape=(x,y), dtype="uint8" )
+    max_response_theta = np.zeros( shape=(x,y), dtype="uint8" )
+    max_pix=-1
+    for x_pix in range(x):
+        for y_pix in range(y):  
+            for z_pix in range(len(thetas)):
+                if responses[z_pix][x_pix][y_pix]> max_pix:
+                    max_pix= responses[z_pix][x_pix][y_pix]
+                    max_z=z_pix
+            
+            max_response[x_pix][y_pix]=  max_pix
+            max_response_theta[x_pix][y_pix] =  max_z*30
+            max_pix=-1
    
            
-     
+    #max_response=max_responses[0]
     #ret,max_response = cv2.threshold(max_response,24,127,cv2.THRESH_BINARY) 
      
     #max_response=Dilate(max_response, DIL=4, KERNEL=2)
@@ -508,20 +526,17 @@ def DetectVessels(img):
     #ImU.PrintImg(max_response,'Erode/dilate')
  
     ret, otsu = cv2.threshold( max_response,0,127,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    #ImU.PrintImg(otsu,'otsu')
-  
+    ImU.PrintImg(otsu,'otsu')
+    '''
     adaptiveThreshold=cv2.adaptiveThreshold(max_response,5,cv2.ADAPTIVE_THRESH_MEAN_C   , cv2.THRESH_BINARY_INV,31,-15)
     ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')  
     erode=Erode(adaptiveThreshold,EROD=1, KERNEL=6)
     erode=Dilate(erode,DIL=1, KERNEL=6)
-    erode=Erode(erode,EROD=1, KERNEL=6)
-    erode=Dilate(erode,DIL=1, KERNEL=6)
-    erode=Erode(erode,EROD=1, KERNEL=6)
-    erode=Dilate(erode,DIL=1, KERNEL=6)
+
     
     ImU.PrintImg(erode,'Erode adaptiveThreshold') 
-  
-    return otsu/otsu.max()
+    '''  
+    return 0#otsu/otsu.max()
         
 def DetectHE(img, gamma_offset=0, silence=False):
     
