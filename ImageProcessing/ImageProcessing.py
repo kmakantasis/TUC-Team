@@ -179,6 +179,25 @@ def HistAdjust(img, gamma_offset=0, silence=True):
         print ("channel mean=%3.3f" %np.mean(img))
         
     return img
+    
+def BuildGaborFlters():
+    #https://cvtuts.wordpress.com/2014/04/27/gabor-filters-a-practical-overview/
+
+    filters = [] #init list
+    ksize = 17
+    for theta in np.arange(0, np.pi, np.pi / 8):
+        kern = cv2.getGaborKernel((ksize, ksize), 3, theta, 8.0, 0.8, 0, ktype=cv2.CV_32F)
+        kern /= 1.0*kern.sum()
+        filters.append(kern)
+    return filters
+
+def ProcessGabor(img, filters):
+    accum = np.zeros_like(img)
+    for kern in filters:
+        fimg = cv2.filter2D(img, cv2.CV_8UC3, kern)
+        np.maximum(accum, fimg, accum)
+    return accum    
+    
 
 def MatchedFilter(img):
     '''
@@ -186,6 +205,31 @@ def MatchedFilter(img):
     rot_g = cv2.warpAffine(g_original,M,(cols,rows)) # Rotation is done    
     
     '''
+    #---------------gabor filter testing
+    ImU.PrintImg(img,'img ')
+    filters= BuildGaborFlters()
+    gabor_filtered= ProcessGabor(img, filters)
+    #gabor_filtered=Closing(gabor_filtered)
+    #gabor_filtered= ProcessGabor(gabor_filtered, filters) 
+    ImU.PrintImg(gabor_filtered,'gabor_filtered ')    
+    
+    #hist_eq=cv2.equalizeHist(gabor_filtered)
+    
+    #ImU.PrintImg(hist_eq,'hist_eq gabor_filtered ')
+    
+    #ret,thresh = cv2.threshold(hist_eq,15,50,cv2.THRESH_BINARY)
+    #ImU.PrintImg(thresh,'hist_eq & threshold')
+
+    #adaptive thresh
+    #adaptiveThreshold=cv2.adaptiveThreshold(gabor_filtered,5,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,2)
+    #ImU.PrintImg(adaptiveThreshold,'gabor_filtered adaptiveThreshold ')    
+    
+    #otsu
+    #ret, otsu = cv2.threshold( gabor_filtered,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'max_responses otsu')
+    return 0
+    #--------end gabor filter testing  
+    
     x,y=img.shape
 
     img = cv2.GaussianBlur(img,(3,3),8) 
@@ -261,11 +305,12 @@ def MatchedFilter(img):
 
     #
     ImU.PrintImg(max_responses,'max_responses ')
-    #ImU.PrintImg(otsu,'max_responses otsu')
+    
     
     blend=cv2.add(max_responses,img)
     ImU.PrintImg(blend ,'img +max_responses ')
     #ret, otsu = cv2.threshold( blend,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'max_responses otsu')
  
   
     return max_responses

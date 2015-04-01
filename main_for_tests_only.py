@@ -35,7 +35,7 @@ for i in range(1):#range(names.shape[0]):
     #name='229_left' #not solved
     #name='16_right'
     
-    #name='2916_right'
+    name='818_left'
     
 
     #name='16114_right' 
@@ -44,7 +44,7 @@ for i in range(1):#range(names.shape[0]):
     #name ='10321_left' #HE not done
     #name ='19116_right' #done
 
-    #name ='2273_right'
+    # name ='2273_right'
     #name ='10904_right'
     #name ='11267_left'
     #name ='1639_left' #check
@@ -68,9 +68,9 @@ for i in range(1):#range(names.shape[0]):
     
     gray=numpy.uint8(gray)
     
-    vessels_mask= ImageProcessing.DetectVessels(g )
+    #vessels_mask= ImageProcessing.DetectVessels(g )
    
-    #ImageProcessing.MatchedFilter(g)
+    ImageProcessing.MatchedFilter(g)
   
     #circles=ImageProcessing.find_circles(g)
     
