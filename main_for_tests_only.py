@@ -68,9 +68,9 @@ for i in range(1):#range(names.shape[0]):
     
     gray=numpy.uint8(gray)
     
-    #vessels_mask= ImageProcessing.DetectVessels(g )
+    vessels_mask= ImageProcessing.DetectVessels(g )
    
-    ImageProcessing.MatchedFilter(g)
+    #ImageProcessing.MatchedFilter(g)
   
     #circles=ImageProcessing.find_circles(g)
     

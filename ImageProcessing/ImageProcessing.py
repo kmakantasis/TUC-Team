@@ -428,8 +428,8 @@ def DetectVessels(img):
     #kernel = np.ones((5,5),np.float32)/25
     #img=Erode(img, EROD=4)
     
-    img = cv2.GaussianBlur(img,(3,3),6)
-    img = cv2.GaussianBlur(img,(7,7),3)
+    img = cv2.GaussianBlur(img,(3,3),4)
+    img = cv2.GaussianBlur(img,(7,7),2)
     img = cv2.GaussianBlur(img,(15,15),2)
     
 
@@ -468,47 +468,58 @@ def DetectVessels(img):
     dst= np.ndarray( shape=(x,y), dtype="uint8" )
     rot_kernel = np.zeros(shape=(16,16), dtype="int" )
      
-    responses=list()
+    
     #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
     #i=0
+  
     
     kernel=np.uint8(kernel +10)
-    rot_kernels=list()
-    for theta in thetas:
+    rot_kernels=[]
+    responses=[]
+    for theta in  np.arange(0, 180 ,30):
    
         M = cv2.getRotationMatrix2D((8,8),theta,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
         rot_kernel = cv2.warpAffine(kernel,M,(16,16), borderValue=10) # Rotation is done
         #ImU.PrintImg(rot_kernel,'rot kernel') 
         rot_kernel=(rot_kernel.astype(int)-10).astype(int)
-        rot_kernel=rot_kernel/4.
+        rot_kernel=rot_kernel/8.
         rot_kernels.append(rot_kernel)
         
         dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
         responses.append(dst)
-              
-    # Find max responses
-    max_responses = np.zeros( shape=(x,y), dtype="uint8" )
-    max_pix=-1
-    for x_pix in range(x):
-        for y_pix in range(y):
-            
-            for z_pix in range(len(thetas)):
-                if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
-            
-            max_responses[x_pix][y_pix]=  max_pix
-            max_pix=-1
-            
-    #ImU.PrintImg(max_responses,'max_responses')       
-    #ret,max_responses = cv2.threshold(max_responses,24,127,cv2.THRESH_BINARY) 
+        
+        
+        
+    
+    max_response = np.zeros_like(img)
+    for response in responses:
+        np.maximum(max_response, response, max_response)
+             
+   
+           
      
-    max_responses=Dilate(max_responses, DIL=1, KERNEL=3)
-    max_responses=Dilate(max_responses, DIL=1, KERNEL=6)   
-
+    #ret,max_response = cv2.threshold(max_response,24,127,cv2.THRESH_BINARY) 
+     
+    #max_response=Dilate(max_response, DIL=4, KERNEL=2)
+    #max_response=Opening(max_response, OPEN=4) 
+    
+    #ImU.PrintImg(max_response,'max_responses')  
     #max_responses=Erode(max_responses, EROD=1)
-    #ImU.PrintImg(max_responses,'Erode/dilate')
+    #ImU.PrintImg(max_response,'Erode/dilate')
  
-    ret, otsu = cv2.threshold( max_responses,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    ImU.PrintImg(otsu,'otsu')
+    ret, otsu = cv2.threshold( max_response,0,127,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'otsu')
+  
+    adaptiveThreshold=cv2.adaptiveThreshold(max_response,5,cv2.ADAPTIVE_THRESH_MEAN_C   , cv2.THRESH_BINARY_INV,31,-15)
+    ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')  
+    erode=Erode(adaptiveThreshold,EROD=1, KERNEL=6)
+    erode=Dilate(erode,DIL=1, KERNEL=6)
+    erode=Erode(erode,EROD=1, KERNEL=6)
+    erode=Dilate(erode,DIL=1, KERNEL=6)
+    erode=Erode(erode,EROD=1, KERNEL=6)
+    erode=Dilate(erode,DIL=1, KERNEL=6)
+    
+    ImU.PrintImg(erode,'Erode adaptiveThreshold') 
   
     return otsu/otsu.max()
         
