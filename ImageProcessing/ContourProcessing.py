@@ -4,6 +4,8 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 import math
 import cv2
+import ImageUtils as ImU
+import ImageProcessing
  
  
 def CNTCentroid(cnt):
@@ -95,6 +97,50 @@ def ContourFiltering(binary, silence=False):
       '''    
         
     return mask2                         
+
+def VesselsFiltering(img, silence=False):
+    img=1- img/img.max() #ensure input is binary
+    #ret,img = cv2.threshold(img,0,1,cv2.THRESH_BINARY)
+    ImU.PrintImg(img,'img')
+    cnt = cv2.findContours(img,cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE )[0]
+    
+
+    #cv2.drawContours(mask, cnt, -1, (0,50,100), 2)    
+    
+    # We sort and discard possible noisy features/artifacts
+    img_height, img_width = img.shape
+    #mask2 = np.ones(thresh.shape[:2], dtype="uint8") #* 255
+    mask = np.ones_like(img)
+    
+    for c in cnt :
+          
+        #-----we should put our rules here
+        Rules_Passed=False
+        
+        rule0 = CNTRule_Area(c, 1, 120)
+ 
+        
+        Rules_Passed= rule0  
+            
+        if Rules_Passed :  
+            cv2.drawContours(mask, [c], -1, 0, -1)
+        
+        #mask2=1- mask2/mask2.max()
+      
+    ImU.PrintImg(mask,'mask')
+    mask=mask
+    img= cv2.bitwise_and(img,mask)
+    ImU.PrintImg(img,'img &mask')
+    
+    img=ImageProcessing.Dilate(img,DIL=2, KERNEL=4)    
+    img=ImageProcessing.Erode(img,EROD=3, KERNEL=4)
+    #img=ImageProcessing.Dilate(img,DIL=1, KERNEL=4)    
+    #img=ImageProcessing.Erode(img,EROD=1, KERNEL=4)
+
+    
+    ImU.PrintImg(img,'connected mask')
+    
+    return img
             
     #quality_percent = float(quality_meter)/ (len(cnt)+1)
    # quality_mass_percent  =  float(quality_mass)/ (total_mass+1)

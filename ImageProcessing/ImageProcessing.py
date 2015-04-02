@@ -525,17 +525,19 @@ def DetectVessels(img):
     #max_responses=Erode(max_responses, EROD=1)
     #ImU.PrintImg(max_response,'Erode/dilate')
  
-    ret, otsu = cv2.threshold( max_response,0,127,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    ImU.PrintImg(otsu,'otsu')
-    '''
-    adaptiveThreshold=cv2.adaptiveThreshold(max_response,5,cv2.ADAPTIVE_THRESH_MEAN_C   , cv2.THRESH_BINARY_INV,31,-15)
-    ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')  
-    erode=Erode(adaptiveThreshold,EROD=1, KERNEL=6)
-    erode=Dilate(erode,DIL=1, KERNEL=6)
-
+    #ret, otsu = cv2.threshold( max_response,0,127,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'otsu')
     
-    ImU.PrintImg(erode,'Erode adaptiveThreshold') 
-    '''  
+    adaptiveThreshold=cv2.adaptiveThreshold(max_response,1,cv2.ADAPTIVE_THRESH_MEAN_C  , cv2.THRESH_BINARY_INV,31,-15)
+    #ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
+    cnt_input=adaptiveThreshold
+    #erode=Erode(adaptiveThreshold,EROD=1, KERNEL=6)
+    #erode=Dilate(erode,DIL=1, KERNEL=6)
+    #ImU.PrintImg(erode,'Erode adaptiveThreshold') 
+    
+    cnt_filtered=CntP.VesselsFiltering(cnt_input)
+    #ImU.PrintImg(cnt_filtered,'cnt_filtered') 
+      
     return 0#otsu/otsu.max()
         
 def DetectHE(img, gamma_offset=0, silence=False):
