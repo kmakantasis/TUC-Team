@@ -97,7 +97,7 @@ def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     return dilate, opening, closing
      
     
-def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15, EQ=False, silence=True):
+def FeaturesDetection(img, total_mask, LOW=15, TP_MASK=True, KERNEL=15, EQ=False, silence=True):
     """            
     Function definition
     +++++++++++++++++++
@@ -126,11 +126,11 @@ def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15
     tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
   
     #apply mask
-    tophat = np.array(tophat*total_mask, dtype="uint8") 
+    tophat = np.array(tophat*(total_mask/total_mask.max()), dtype="uint8") 
     
     if silence==False: ImU.PrintImg(tophat,'tophat image')
     
-    ret,thresh = cv2.threshold(tophat,LOW,HIGH,cv2.THRESH_BINARY)
+    ret,thresh = cv2.threshold(tophat,LOW,1,cv2.THRESH_BINARY)
     ImU.PrintImg(thresh,'tophat & threshold')
 
     
@@ -146,17 +146,7 @@ def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15
     
     if silence==False: ImU.PrintImg(tophat,'after tophat')
         
-    #threshold
    
-
-     
-    #thresh= np.array(thresh*total_mask, dtype="uint8")       
-      
-    #mask = np.ones(thresh.shape[:2], dtype="uint8") * 255  
-    
-
-
- 
     return tophat, thresh
 
 
@@ -414,7 +404,7 @@ def DetectTesting(img, gamma_offset=0, silence=True):
     
     if silence==False: ImU.PrintImg(thresh,'tophat & threshold')    
     
-    #tophat, mask2 = FeaturesDetection(img, total_mask, EQ=False,  silence=False)
+    
     return thresh
         
 def DetectVesselsFast(img):
@@ -595,7 +585,7 @@ def DetectHE(img, gamma_offset=0, silence=False):
     
     #opening=255-opening
     # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=150, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
+    tophat = FeaturesDetection(opening, total_mask, LOW=15, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
     #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100,  EQ=True, silence=True) #default=opening
     #opening=ImU.ContrastCorrection(opening,1) 
     ImU.PrintImg(img ,'img')
