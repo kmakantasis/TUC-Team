@@ -6,6 +6,8 @@ import math
 import cv2
 import ImageUtils as ImU
 import ImageProcessing
+from numba import double
+from numba.decorators import jit
  
  
 def CNTCentroid(cnt):
@@ -44,8 +46,8 @@ def CNTRule_KickOutCircular(img,cnt):
 def CNTRule_Area(cnt, MIN_THRESHOLD, MAX_THRESHOLD):
     return MIN_THRESHOLD< cv2.contourArea(cnt) and cv2.contourArea(cnt) < MAX_THRESHOLD
     
-def CNTRule_AspectRatio(c):
-    ASPECT_RATIO=4
+def CNTRule_AspectRatio(c, ASPECT_RATIO=4 ):
+  
     x,y,w,h = cv2.boundingRect(c)
     aspect_ratio = float(w)/h
     
@@ -99,9 +101,10 @@ def ContourFiltering(binary, silence=False):
     return mask2                         
 
 def VesselsFiltering(img, silence=False):
+    img = cv2.GaussianBlur(img,(3,3),2) 
     img=1- img/img.max() #ensure input is binary
     #ret,img = cv2.threshold(img,0,1,cv2.THRESH_BINARY)
-    ImU.PrintImg(img,'img')
+    #ImU.PrintImg(img,'img')
     cnt = cv2.findContours(img,cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE )[0]
     
 
@@ -117,30 +120,32 @@ def VesselsFiltering(img, silence=False):
         #-----we should put our rules here
         Rules_Passed=False
         
-        rule0 = CNTRule_Area(c, 1, 120)
+        rule0 = CNTRule_Area(c, 1, 180)
+        rule1 = not CNTRule_Sphericity(c,accept_ratio=0.3)
+        rule2 =  CNTRule_AspectRatio(c, ASPECT_RATIO=4 )
  
         
-        Rules_Passed= rule0  
+        Rules_Passed= rule0 #and  rule1  and rule2
             
         if Rules_Passed :  
             cv2.drawContours(mask, [c], -1, 0, -1)
         
         #mask2=1- mask2/mask2.max()
-      
-    ImU.PrintImg(mask,'mask')
+    mask = cv2.GaussianBlur(mask,(3,3),2) 
+
+   # ImU.PrintImg(mask,'mask')
     mask=mask
     img= cv2.bitwise_and(img,mask)
-    ImU.PrintImg(img,'img &mask')
     
-    img=ImageProcessing.Dilate(img,DIL=2, KERNEL=4)    
-    img=ImageProcessing.Erode(img,EROD=3, KERNEL=4)
-    #img=ImageProcessing.Dilate(img,DIL=1, KERNEL=4)    
-    #img=ImageProcessing.Erode(img,EROD=1, KERNEL=4)
+    vessels_mask=1-img/img.max()
+    ImU.PrintImg(vessels_mask,'img &mask')
+    
+
 
     
-    ImU.PrintImg(img,'connected mask')
+    #ImU.PrintImg(img,'connected mask')
     
-    return img
+    return vessels_mask
             
     #quality_percent = float(quality_meter)/ (len(cnt)+1)
    # quality_mass_percent  =  float(quality_mass)/ (total_mass+1)

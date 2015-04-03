@@ -8,7 +8,7 @@ sys.path.append('./DataCreation')
 import cv2
 import numpy
 import ImageProcessing
-import ImageUtils
+ 
 import LoadData
 import ImageUtils as ImU
 import numpy as np
@@ -35,7 +35,7 @@ for i in range(1):#range(names.shape[0]):
     #name='229_left' #not solved
     #name='16_right'
     
-    name='818_left'
+    #name='818_left'
     
 
     #name='16114_right' 
@@ -51,24 +51,33 @@ for i in range(1):#range(names.shape[0]):
 
     #name ='5140_left' #no XE, more subtle deformations
 
-
+    #name ='5032_left'
 
     img_name = '../data/train_resized/%s.jpg'%name
     
     #img_name = './blob.jpg'
     img_name_temp = '../%s.jpg'%name
     
-    img = ImageUtils.LoadImage(img_name)
+    img = ImU.LoadImage(img_name)
 
-    r,g,b = ImageUtils.SplitImage(img, silence=True)
+    r,g,b = ImU.SplitImage(img, silence=True)
     
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b #cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     gray=255*(gray/gray.max())
    # gray= gray.flatten()
     
-    gray=numpy.uint8(gray)
-    
+    gray=np.uint8(gray)
+  
     vessels_mask= ImageProcessing.DetectVessels(g )
+
+   #g2=ImU.BandCorrection(g,160,255, 0.6)
+   # vessels_mask= ImageProcessing.DetectVessels(g2 )
+  
+    #ImU.PrintImg(img2,'img2')
+    
+    #vessels_mask= ImageProcessing.DetectVessels(img2)
+ 
+ 
    
     #ImageProcessing.MatchedFilter(g)
   

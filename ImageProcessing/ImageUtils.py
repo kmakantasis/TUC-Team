@@ -3,6 +3,10 @@ import numpy as np
 from scipy import ndimage
 import matplotlib.pyplot as plt
 import cv2
+import math
+from numba import double
+from numba.decorators import jit
+import copy
  
  
 def PrintImg(im_r, meassage):
@@ -104,6 +108,26 @@ def GammaCorrection(img, correction):
     img = img/255.0
     img = cv2.pow(img, correction)
     return np.uint8(img*255)
+@jit  
+def BandCorrection(img, A=127, B=255, factor=0.5):
+    width,heght=img.shape
+    img = np.uint8(img)
+    img2=copy.copy(img) #do this or you destroy input object
+    for x in range(width):
+            for y in range(heght):
+                pix=img2[x][y]
+                if A<pix:
+                    delta =factor*(pix-A)
+                    pix = pix-delta 
+                    
+                if B<pix:
+                    delta =factor*(pix-B)
+                    pix =pix-delta 
+               #else:
+                    
+                img2[x][y]=pix
+    
+    return np.uint8(img2)
 
 def ContrastCorrection(img, correction):
 

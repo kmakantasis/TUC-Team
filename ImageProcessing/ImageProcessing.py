@@ -7,6 +7,7 @@ import cv2
 from scipy.ndimage import label
 from scipy import ndimage
 from skimage.morphology import watershed
+from skimage.morphology import skeletonize
 import operator
 
 import ContourProcessing as CntP
@@ -419,11 +420,19 @@ def DetectTesting(img, gamma_offset=0, silence=True):
 def DetectVesselsFast(img):
     img = cv2.GaussianBlur(img,(3,3),8)
     img = cv2.GaussianBlur(img,(7,7),4)
-    img = cv2.GaussianBlur(img,(15,15),2)
+    #img = cv2.GaussianBlur(img,(15,15),2)
     adaptiveThreshold=cv2.adaptiveThreshold(img,5,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,2)
     ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
  
     return adaptiveThreshold        
+
+
+def Skeletonize(img):
+ 
+    img2=img/img.max()
+    img2 = skeletonize(img2) 
+     
+    return img2
         
 @jit       
 def DetectVessels(img):
@@ -434,7 +443,12 @@ def DetectVessels(img):
     
     img = cv2.GaussianBlur(img,(3,3),4)
     img = cv2.GaussianBlur(img,(7,7),2)
-    img = cv2.GaussianBlur(img,(15,15),2)
+    #img = cv2.GaussianBlur(img,(15,15),2)
+    
+    #img2=ImU.BandCorrection(img,127,255, 0.6)
+    ImU.PrintImg(img,'img')
+ 
+    #img=img2
     
 
     kernel_zero = np.zeros(shape=(1,16), dtype="int")
@@ -516,7 +530,7 @@ def DetectVessels(img):
    
            
     #max_response=max_responses[0]
-    #ret,max_response = cv2.threshold(max_response,24,127,cv2.THRESH_BINARY) 
+    ret,thresh = cv2.threshold(max_response,30,127,cv2.THRESH_BINARY_INV) 
      
     #max_response=Dilate(max_response, DIL=4, KERNEL=2)
     #max_response=Opening(max_response, OPEN=4) 
@@ -528,17 +542,34 @@ def DetectVessels(img):
     #ret, otsu = cv2.threshold( max_response,0,127,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
     #ImU.PrintImg(otsu,'otsu')
     
-    adaptiveThreshold=cv2.adaptiveThreshold(max_response,1,cv2.ADAPTIVE_THRESH_MEAN_C  , cv2.THRESH_BINARY_INV,31,-15)
+    #thresh=cv2.adaptiveThreshold(max_response,1,cv2.ADAPTIVE_THRESH_MEAN_C  , cv2.THRESH_BINARY_INV,31,-15)
     #ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
-    cnt_input=adaptiveThreshold
+    cnt_input=thresh
     #erode=Erode(adaptiveThreshold,EROD=1, KERNEL=6)
     #erode=Dilate(erode,DIL=1, KERNEL=6)
     #ImU.PrintImg(erode,'Erode adaptiveThreshold') 
     
-    cnt_filtered=CntP.VesselsFiltering(cnt_input)
+    final_vessels_mask=CntP.VesselsFiltering(cnt_input)
+    
+    simple_mask_cirlualr=Msk.CircularMaskSimple(img)
+    x,y= Msk.Disc_Detect(img,'WHITE')
+    optic_disc_mask= Msk.DiscMask(img, x,y,80)
+   
+    total_mask= optic_disc_mask*simple_mask_cirlualr #*total_mask*
+    total_mask=total_mask/total_mask.max()
+    ImU.PrintImg(total_mask,'total_mask')
+    final_vessels_mask= (1- final_vessels_mask/final_vessels_mask.max())*total_mask
+    ImU.PrintImg(final_vessels_mask,' final_vessels_mask&mask')
+    
+    skel=Skeletonize(final_vessels_mask)
+    
+    
+    
+    ImU.PrintImg(skel,'skeletonize')
+    #cnt_filtered=CntP.VesselsFiltering(cnt_filtered)
     #ImU.PrintImg(cnt_filtered,'cnt_filtered') 
       
-    return 0#otsu/otsu.max()
+    return final_vessels_mask#otsu/otsu.max()
         
 def DetectHE(img, gamma_offset=0, silence=False):
     
