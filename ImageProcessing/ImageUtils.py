@@ -108,6 +108,32 @@ def GammaCorrection(img, correction):
     img = img/255.0
     img = cv2.pow(img, correction)
     return np.uint8(img*255)
+    
+def HistAdjust(img, gamma_offset=0, silence=True):
+    hist = cv2.calcHist([img],[0],None,[4],[0,256])
+    if silence==False:  
+        print ("Hist[0]=%3.3f" %hist[0])
+    #----histogram correction invariant to scale
+    height, width = img.shape
+    mpixels=height*width
+    print ("Hist mpixels=%3.3f" %mpixels)
+    
+          
+    if (hist[0]<mpixels/2.):
+        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1 + gamma_offset
+        img= ImU.GammaCorrection(img,gamma)
+    else:
+        gamma=1 + gamma_offset
+        img= ImU.GammaCorrection(img,gamma)
+        
+    hist = cv2.calcHist([img],[0],None,[4],[0,256])
+    if silence==False:  
+        print ("After Gamma=%2.2f Hist[0]=%3.3f" %(gamma,hist[0]) )  
+        print ("channel mean=%3.3f" %np.mean(img))
+        
+    return img
+       
+    
 @jit  
 def BandCorrection(img, A=127, B=255, factor=0.5):
     width,heght=img.shape
@@ -137,141 +163,37 @@ def ContrastCorrection(img, correction):
     img = cv2.multiply(img, bright)
     return img
     
+def CropImage(img, features, silence=True):
+    ret,thresh_flip = cv2.threshold(img,10,1,cv2.THRESH_BINARY)  
+
+    contours,hierarchy = cv2.findContours(thresh_flip, 1, 2)
     
-def DetectMicroAN(img, EROD=4, CLO=4, OPEN=5, silence=False):
-    #Under heavy development
-    '''
-    hist = cv2.calcHist([img],[0],None,[4],[0,256])
-    if silence==False:  
-        print ("Hist[0]=%3.3f" %hist[0])
-    #----histogram correction invariant to scale
-    height, width = img.shape
-    mpixels=height*width
-    print ("Hist mpixels=%3.3f" %mpixels)
- 
-        
-    if (hist[0]<mpixels/2.):
-        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1
-        img=ImU.GammaCorrection(img,gamma)
+    area = 0
+    for cnt in contours:
+        if area < cv2.contourArea(cnt):
+            area = cv2.contourArea(cnt)
+            largest_contour = cnt
+    
+    cnt = largest_contour
+    x,y,w,h = cv2.boundingRect(cnt)
+   
+    if w > h:
+        max_dim = w
     else:
-        gamma=1
-    '''    
-    ###-------------basic morphology
-    
-        
-    erode=closing=dilate=img
-    #Basic morphological operations
-    
-    #erode
-    for i in range(1,EROD):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-        erode =cv2.erode(img,kernel,iterations = 1)
-   
-    erode=255-erode
-    
-    plt.figure()
-    plt.title("MicroAN erode")
-    plt.imshow(erode, cmap = 'gray')
-    plt.show()     
-        
-    '''   
-    #blackhat
-    kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    erode = cv2.morphologyEx(erode, cv2.MORPH_BLACKHAT, kernel)
-    plt.figure()
-    plt.title("MicroAN Blackhat")
-    plt.imshow(erode, cmap = 'gray')
-    plt.show()       
-    '''
-  
-        
-    '''    
-    #otsu
-    ret, erode = cv2.threshold( erode,40,127,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    plt.figure()
-    plt.title('Otshu Image')
-    plt.imshow(erode ,cmap = 'gray')
-    plt.show()  
-    '''
-        
+        max_dim = h
 
-     
-    #Gaussian filter
-    ''' 
-    for i in range(1,4):
-        erode = cv2.GaussianBlur(erode,(2*i+1,2*i+1),3) 
-    ''' 
-
-
-    ''' 
-    #laplacian filter
-    #erode = cv2.Laplacian(erode,cv2.CV_64F)
-    sobelx = cv2.Sobel(erode,cv2.CV_64F,1,0,ksize=5)
+    cropped_img = np.zeros((max_dim, max_dim), dtype='uint8')
+    cropped_img[0:h, 0:w] = features[y:y+h,x:x+w]
     
-    plt.figure()
-    plt.title("sobelx")
-    plt.imshow(sobelx, cmap = 'gray')
-    plt.show() 
+    if silence == False:
+        plt.figure()
+        plt.imshow(cropped_img ,cmap = 'gray')    
+        plt.show()
     
-    sobely = cv2.Sobel(erode,cv2.CV_64F,0,1,ksize=5)
+    return cropped_img
     
-    plt.figure()
-    plt.title("sobely")
-    plt.imshow(sobely, cmap = 'gray')
-    plt.show()     
-    '''
-    
-    #canny edge
-    edges = cv2.Canny(erode,170,170)    
-    plt.figure()
-    plt.title("Canny edges")
-    plt.imshow(edges, cmap = 'gray')
-    plt.show()
-    
-    
-  
-    #Gradient filter
-    ''' 
-    for i in range(1,2):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
-        erode = cv2.morphologyEx(erode, cv2.MORPH_GRADIENT, kernel)
-    '''
-    #erode=cv2.equalizeHist(erode)
-    '''
-    # Tophat
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(120,120))
-    erode = cv2.morphologyEx(erode, cv2.MORPH_TOPHAT, kernel)
-    '''
-    #ret,erode = cv2.threshold(erode,100,127,cv2.THRESH_BINARY)  
-
- 
-    '''   
-    #closing  
-    closing=dilate
-    for i in range(1,CLO):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i*3,1+i*3))
-        closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=1)
-    ''' 
-
-               
-    #opening
-    for i in range(1,OPEN):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-        opening = cv2.morphologyEx(erode, cv2.MORPH_OPEN, kernel)
-    
-   
-    plt.figure()
-    plt.title("MicroAN openig")
-    plt.imshow(opening, cmap = 'gray')
-    plt.show()    
-        
-    ##- end basic morphology
-       
-   
-            
-    #circular_mask, fill_mask, circular_inv, total_mask = CircularDetectMasking(img, opening, silence=silence)
-
-    #tophat, mask2 = FeaturesDetection(opening, total_mask, silence=silence) 
+def DetectMicroAN(img,  silence=False):
+    #Under heavy development
     
     return 1
 

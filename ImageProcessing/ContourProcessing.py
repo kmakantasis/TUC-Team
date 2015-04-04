@@ -120,7 +120,7 @@ def VesselsFiltering(img, silence=False):
         #-----we should put our rules here
         Rules_Passed=False
         
-        rule0 = CNTRule_Area(c, 1, 180)
+        rule0 = CNTRule_Area(c, 1, 140)
         rule1 = not CNTRule_Sphericity(c,accept_ratio=0.3)
         rule2 =  CNTRule_AspectRatio(c, ASPECT_RATIO=4 )
  

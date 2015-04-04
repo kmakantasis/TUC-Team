@@ -8,6 +8,7 @@ sys.path.append('./DataCreation')
 import cv2
 import numpy
 import ImageProcessing
+import RetinalSegmentation as RetSeg
  
 import LoadData
 import ImageUtils as ImU
@@ -68,7 +69,7 @@ for i in range(1):#range(names.shape[0]):
     
     gray=np.uint8(gray)
   
-    vessels_mask= ImageProcessing.DetectVessels(g )
+    vessels_mask= RetSeg.DetectVessels(g )
 
    #g2=ImU.BandCorrection(g,160,255, 0.6)
    # vessels_mask= ImageProcessing.DetectVessels(g2 )
