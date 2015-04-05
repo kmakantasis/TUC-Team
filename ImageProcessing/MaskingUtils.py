@@ -5,8 +5,23 @@ import math
 import numpy as np
 import ImageUtils as ImU
 import ImageProcessing
+import ContourProcessing as CntP
+import MaskingUtils as Msk
 
 import cv2
+ 
+def TotalMask(img, silence=True): 
+
+    simple_mask_cirlualr=Msk.CircularMaskSimple(img)
+    x,y= Msk.Disc_Detect(img,'WHITE')
+    optic_disc_mask= Msk.DiscMask(img, x,y,80)
+   
+    total_mask= optic_disc_mask*simple_mask_cirlualr #*total_mask*
+    total_mask= total_mask/total_mask.max()
+    if silence == False: ImU.PrintImg(total_mask,'total_mask')
+    
+    return total_mask
+     
  
 def CircularMaskSimple(img):
     

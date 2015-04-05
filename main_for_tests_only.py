@@ -9,6 +9,7 @@ import cv2
 import numpy
 import ImageProcessing
 import RetinalSegmentation as RetSeg
+import MaskingUtils as Msk
  
 import LoadData
 import ImageUtils as ImU
@@ -38,14 +39,13 @@ for i in range(1):#range(names.shape[0]):
     
     #name='818_left'
     
-
     #name='16114_right' 
     #name='1430_left'
     #name='11031_right' #HE done
     #name ='10321_left' #HE not done
     #name ='19116_right' #done
 
-    # name ='2273_right'
+    #name ='2273_right'
     #name ='10904_right'
     #name ='11267_left'
     #name ='1639_left' #check
@@ -68,17 +68,18 @@ for i in range(1):#range(names.shape[0]):
    # gray= gray.flatten()
     
     gray=np.uint8(gray)
-  
-    vessels_mask= RetSeg.DetectVessels(g )
+    
+    RetSeg.DetectFlow_1(g) 
+    
+    #total_mask=Msk.TotalMask(g)
+   #vessels_mask= RetSeg.DetectVessels(g,Msk.TotalMask(g), silence=False )
 
    #g2=ImU.BandCorrection(g,160,255, 0.6)
    # vessels_mask= ImageProcessing.DetectVessels(g2 )
   
     #ImU.PrintImg(img2,'img2')
     
-    #vessels_mask= ImageProcessing.DetectVessels(img2)
- 
- 
+    #vessels_mask= ImageProcessing.DetectVessels(img2) 
    
     #ImageProcessing.MatchedFilter(g)
   
@@ -89,7 +90,7 @@ for i in range(1):#range(names.shape[0]):
     #ImageProcessing.MatchedFilter(g)
     
     #vessels_mask=ImageProcessing.MatchedFilter2(g)
-   # ImU.PrintImg(vessels_mask,'vessels_mask')
+    #ImU.PrintImg(vessels_mask,'vessels_mask')
 
     
     #features, mask2 = ImageProcessing.DetectHE(g, gamma_offset=-0.6, silence=True)
@@ -99,15 +100,13 @@ for i in range(1):#range(names.shape[0]):
     
     #cropped_image = ImageProcessing.CropImage(g, features, silence=True)
     
-    #ImageProcessing.TriangularMasking()
-    
+    #ImageProcessing.TriangularMasking()   
     
     plt.figure()
     image = plt.imread(img_name)
     plt.imshow(image)
     plt.show()
-    
-    
+     
     print '--->Index=%d ,Image Name:%s, Image label=%d '% (i, name,label) 
         
 '''

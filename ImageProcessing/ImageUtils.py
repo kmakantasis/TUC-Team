@@ -121,10 +121,10 @@ def HistAdjust(img, gamma_offset=0, silence=True):
           
     if (hist[0]<mpixels/2.):
         gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1 + gamma_offset
-        img= ImU.GammaCorrection(img,gamma)
+        img= GammaCorrection(img,gamma)
     else:
         gamma=1 + gamma_offset
-        img= ImU.GammaCorrection(img,gamma)
+        img= GammaCorrection(img,gamma)
         
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
     if silence==False:  

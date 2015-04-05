@@ -149,9 +149,7 @@ def FeaturesDetection(img, total_mask, LOW=15, TP_MASK=True, KERNEL=15, EQ=False
    
     return tophat, thresh
 
-
     
-
 def BuildGaborFlters():
     #https://cvtuts.wordpress.com/2014/04/27/gabor-filters-a-practical-overview/
 
@@ -245,7 +243,6 @@ def MatchedFilter(img):
     thetas= np.asarray([0, 0.5, 1 ] )
     thetas=thetas*pi
     
-
     dst= np.ndarray( shape=(x,y), dtype="uint8" )    
     responses=list()
     #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
@@ -277,31 +274,25 @@ def MatchedFilter(img):
 
     #
     ImU.PrintImg(max_responses,'max_responses ')
-    
-    
+      
     blend=cv2.add(max_responses,img)
     ImU.PrintImg(blend ,'img +max_responses ')
     #ret, otsu = cv2.threshold( blend,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
     #ImU.PrintImg(otsu,'max_responses otsu')
- 
   
     return max_responses
 ##------------------------------------------------------very experimental zone
  
-
          
 def find_circles(img):
     
- 
-    #img = cv2.equalizeHist(img)
-    
+    #img = cv2.equalizeHist(img)    
     #ret,otsu = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     #ImU.PrintImg(otsu,'THRESH_OTSU')
     
-
     params = cv2.SimpleBlobDetector_Params()
  
-     # Change thresholds
+    # Change thresholds
     params.minThreshold = 30;
     params.maxThreshold = 100;
    
@@ -329,8 +320,7 @@ def find_circles(img):
     im_with_keypoints = cv2.drawKeypoints(im_with_keypoints, keypoints, np.array([]), (0,255,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     
     ImU.PrintImg(im_with_keypoints,'im_with_keypoints')
-        
-    
+          
     img = cv2.bilateralFilter(img, 11, 17, 17)
  
     canny = cv2.Canny(img, 30, 60,  9) 
@@ -338,18 +328,12 @@ def find_circles(img):
     
     laplacian = abs( cv2.Laplacian(img,cv2.CV_32F,ksize=9))
     ImU.PrintImg(laplacian,'laplacian')
-    
-
-    
+       
     sobel = abs(cv2.Sobel(img,cv2.CV_32F,1,1,ksize=31) )
     ImU.PrintImg(sobel,'sobel')
     
     return img
 
- 
-        
- 
-   
 
 def Skeletonize(img):
  

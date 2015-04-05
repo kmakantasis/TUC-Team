@@ -19,62 +19,14 @@ from numba import double
 from numba.decorators import jit
 
  
-     
-    
-def FeaturesDetection(img, total_mask, LOW=15, TP_MASK=True, KERNEL=15, EQ=False, silence=True):
-    """            
-    Function definition
-    +++++++++++++++++++
-            
-        .. py:function:: FeaturesDetection(opening, total_mask, TP_MASK=True, silence=True)
-        
-            Functions for detecting features.
-            
-            :param np.array opening: opened image created using BasicMorphology().
-            :param np.array total_mask: opened image created using CircuralDetectMasking().
-            :param boolean TP_MASK: default is True. apply mask later, after thresholding. 
-            :param boolean silence: default is True. Set to False to print the result.
-            
-               
-            :rtype: tophat, mask2 - two two dimensional numpy arrays corresponding to features. 
-    """
-    if silence==False: ImU.PrintImg(total_mask,'total mask')    
-    
-    if EQ: img = cv2.equalizeHist(img)
-        
-    if silence==False: ImU.PrintImg(img,'before tophat')
-       
-     
-    #tophat
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(KERNEL,KERNEL))
-    tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
-  
-    #apply mask
-    tophat = np.array(tophat*(total_mask/total_mask.max()), dtype="uint8") 
-    
-    if silence==False: ImU.PrintImg(tophat,'tophat image')
-    
-    ret,thresh = cv2.threshold(tophat,LOW,1,cv2.THRESH_BINARY)
-    ImU.PrintImg(thresh,'tophat & threshold')
+def DetectFlow_1(img):
 
-    
-    '''    
-    tophat=ImU.ContrastCorrection(tophat,1.5)
+    total_mask=Msk.TotalMask(img)
+    vessels = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
+    HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
 
+    return 1    
     
-    if silence==False: ImU.PrintImg(tophat,'tophat mult x image') 
-    
-    ret,thresh = cv2.threshold(tophat,LOW,HIGH,cv2.THRESH_BINARY)
-    ImU.PrintImg(thresh,'tophat mult x & threshold')
-    '''
-    
-    if silence==False: ImU.PrintImg(tophat,'after tophat')
-        
-   
-    return tophat, thresh
-
- 
- 
         
 def DetectVesselsFast(img, silence=True):
     img = cv2.GaussianBlur(img,(3,3),8)
@@ -88,7 +40,7 @@ def DetectVesselsFast(img, silence=True):
  
         
 @jit       
-def DetectVessels(img):
+def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
     print "starting Detect Vessels"
     #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
     #kernel = np.ones((5,5),np.float32)/25
@@ -99,7 +51,7 @@ def DetectVessels(img):
     #img = cv2.GaussianBlur(img,(15,15),2)
     
     #img2=ImU.BandCorrection(img,127,255, 0.6)
-    ImU.PrintImg(img,'img')
+     
  
     #img=img2
     
@@ -197,27 +149,27 @@ def DetectVessels(img):
     
     #thresh=cv2.adaptiveThreshold(max_response,1,cv2.ADAPTIVE_THRESH_MEAN_C  , cv2.THRESH_BINARY_INV,31,-15)
     #ImU.PrintImg(adaptiveThreshold,'adaptiveThreshold')
-    cnt_input=thresh
+  
     #erode=Erode(adaptiveThreshold,EROD=1, KERNEL=6)
     #erode=Dilate(erode,DIL=1, KERNEL=6)
     #ImU.PrintImg(erode,'Erode adaptiveThreshold') 
     
-    final_vessels_mask=CntP.VesselsFiltering(cnt_input)
+    if ContureFilter==True: 
+        final_vessels_mask=CntP.VesselsFiltering(thresh)
+    else:
+        final_vessels_mask = thresh
     
-    simple_mask_cirlualr=Msk.CircularMaskSimple(img)
-    x,y= Msk.Disc_Detect(img,'WHITE')
-    optic_disc_mask= Msk.DiscMask(img, x,y,80)
-   
-    total_mask= optic_disc_mask*simple_mask_cirlualr #*total_mask*
-    total_mask=total_mask/total_mask.max()
-    ImU.PrintImg(total_mask,'total_mask')
+    #---------------------------------masking--------------------
+    #total_mask=Msk.TotalMask(img)  
+    #------------------------------------------------------------
+    
     final_vessels_mask= (1- final_vessels_mask/final_vessels_mask.max())*total_mask
-    ImU.PrintImg(final_vessels_mask,' final_vessels_mask&mask')
+    
+    if silence==False: ImU.PrintImg(final_vessels_mask,' final_vessels_mask & mask')    
     
     skel=ImP.Skeletonize(final_vessels_mask)
     
-    
-    ImU.PrintImg(skel,'skeletonize')
+    if silence==False: ImU.PrintImg(skel,'skeletonize')
     #cnt_filtered=CntP.VesselsFiltering(cnt_filtered)
     #ImU.PrintImg(cnt_filtered,'cnt_filtered') 
       
@@ -228,7 +180,7 @@ def DetectHE(img, gamma_offset=0, silence=False):
     img=ImU.HistAdjust(img, gamma_offset=0, silence=True)
     #img=ImU.GammaCorrection(img,4)
 
-    dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 
+    dilate, closing, opening = ImP.BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 
     circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=True)
  
     #ImU.PrintImg(total_mask,'circular_mask')
@@ -247,25 +199,22 @@ def DetectHE(img, gamma_offset=0, silence=False):
     
     #opening=255-opening
     # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
+ 
+    tophat, thresh = ImP.FeaturesDetection(opening, total_mask, LOW=15, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
     #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100,  EQ=True, silence=True) #default=opening
     #opening=ImU.ContrastCorrection(opening,1) 
-    if silence==False: ImU.PrintImg(img ,'img')
-    erode=  Erode(img, EROD=1,KERNEL=2)
-    erode=  Opening(erode)
-    erode=  Erode(erode, EROD=1,KERNEL=2)
-    erode=  Opening(erode) 
-    
+    #if silence==False: ImU.PrintImg(img ,'img')
+ 
         
-    ImU.PrintImg(erode ,'erode')
     #ret,thresh = cv2.threshold(erode,60,127,cv2.THRESH_BINARY)
     #ImU.PrintImg(thresh,'erode & thresh')
     
     #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
     #gradient = cv2.morphologyEx(erode, cv2.MORPH_BLACKHAT, kernel)
 
-     
-    return tophat
+    if silence==False: ImU.PrintImg(tophat,'HE out')
+    
+    return tophat, thresh
 
 
 
