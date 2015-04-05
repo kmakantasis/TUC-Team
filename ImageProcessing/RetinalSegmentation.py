@@ -18,17 +18,24 @@ import ImageProcessing as ImP
 from numba import double
 from numba.decorators import jit
 
- 
+@jit
 def DetectFlow_1(img):
 
     total_mask=Msk.TotalMask(img,silence=True )
     Vessels = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
-    HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
+    Vessels_res = cv2.resize(Vessels, (250, 250),  interpolation = cv2.INTER_AREA)   
+    Vessels_skel= ImP.Skeletonize(np.uint8(Vessels_res) )    
+    #ImU.PrintImg(Vessels_skel,'Vessels_skel')
     
-    ImU.PrintImg(Vessels,'Vessels')
-    ImU.PrintImg(HEs_Bin,'HEs_Bin')
-        
-    return 1    
+    HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
+    HEs_Bin_res = cv2.resize(HEs_Bin, (250, 250),  interpolation = cv2.INTER_AREA)
+    
+    blend= Vessels_skel/Vessels_skel.max() + HEs_Bin_res/HEs_Bin_res.max()
+
+    #ImU.PrintImg(blend,'blend')
+    
+    
+    return blend    
     
         
 def DetectVesselsFast(img, silence=True):
@@ -44,7 +51,7 @@ def DetectVesselsFast(img, silence=True):
         
 @jit       
 def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
-    print "starting Detect Vessels"
+    #print "starting Detect Vessels"
     #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
     #kernel = np.ones((5,5),np.float32)/25
     #img=Erode(img, EROD=4)
@@ -170,13 +177,13 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
     
     if silence==False: ImU.PrintImg(final_vessels_mask,' final_vessels_mask & mask')    
     
-    skel=ImP.Skeletonize(final_vessels_mask)
+    #skel=ImP.Skeletonize(final_vessels_mask)
     
-    if silence==False: ImU.PrintImg(skel,'skeletonize')
+    #if silence==False: ImU.PrintImg(skel,'skeletonize')
     #cnt_filtered=CntP.VesselsFiltering(cnt_filtered)
     #ImU.PrintImg(cnt_filtered,'cnt_filtered') 
       
-    return skel#otsu/otsu.max()
+    return final_vessels_mask#otsu/otsu.max()
         
 def DetectHE(img, gamma_offset=0, silence=False):
     

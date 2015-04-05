@@ -37,7 +37,7 @@ def ImageRescale(im_r, TARGET_MPIXELS=1e6, GRAY=False):
     crop_size = int (abs(width - height)/2)
     cropped_im_r = im_r[ 0:height-1, crop_size:width-crop_size-1]
     
-    return cropped_im_r
+    return np.uint8(cropped_im_r)
 
 
 def LoadImage(img_name):
