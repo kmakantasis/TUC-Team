@@ -21,10 +21,13 @@ from numba.decorators import jit
  
 def DetectFlow_1(img):
 
-    total_mask=Msk.TotalMask(img)
-    vessels = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
+    total_mask=Msk.TotalMask(img,silence=True )
+    Vessels = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
     HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
-
+    
+    ImU.PrintImg(Vessels,'Vessels')
+    ImU.PrintImg(HEs_Bin,'HEs_Bin')
+        
     return 1    
     
         
@@ -155,7 +158,7 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
     #ImU.PrintImg(erode,'Erode adaptiveThreshold') 
     
     if ContureFilter==True: 
-        final_vessels_mask=CntP.VesselsFiltering(thresh)
+        final_vessels_mask=CntP.VesselsFiltering(thresh, silence)
     else:
         final_vessels_mask = thresh
     
@@ -173,7 +176,7 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
     #cnt_filtered=CntP.VesselsFiltering(cnt_filtered)
     #ImU.PrintImg(cnt_filtered,'cnt_filtered') 
       
-    return final_vessels_mask#otsu/otsu.max()
+    return skel#otsu/otsu.max()
         
 def DetectHE(img, gamma_offset=0, silence=False):
     

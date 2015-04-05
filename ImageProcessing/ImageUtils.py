@@ -23,6 +23,7 @@ def ImageRescale(im_r, TARGET_MPIXELS=1e6, GRAY=False):
     else: 
         height, width = im_r.shape
         
+    
     mpixels=height*width
     
     lin_scale=np.sqrt( float(mpixels/TARGET_MPIXELS) )
@@ -31,7 +32,12 @@ def ImageRescale(im_r, TARGET_MPIXELS=1e6, GRAY=False):
         new_height= int(height/lin_scale)
         im_r = cv2.resize(im_r, (new_width, new_height) )
     
-    return im_r
+    #--crop image
+    height, width, depth = im_r.shape
+    crop_size = int (abs(width - height)/2)
+    cropped_im_r = im_r[ 0:height-1, crop_size:width-crop_size-1]
+    
+    return cropped_im_r
 
 
 def LoadImage(img_name):
@@ -192,10 +198,7 @@ def CropImage(img, features, silence=True):
     
     return cropped_img
     
-def DetectMicroAN(img,  silence=False):
-    #Under heavy development
-    
-    return 1
+
 
 
     

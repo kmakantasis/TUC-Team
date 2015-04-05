@@ -100,7 +100,7 @@ def ContourFiltering(binary, silence=False):
         
     return mask2                         
 
-def VesselsFiltering(img, silence=False):
+def VesselsFiltering(img, silence=True):
     img = cv2.GaussianBlur(img,(3,3),2) 
     img=1- img/img.max() #ensure input is binary
     #ret,img = cv2.threshold(img,0,1,cv2.THRESH_BINARY)
@@ -121,8 +121,8 @@ def VesselsFiltering(img, silence=False):
         Rules_Passed=False
         
         rule0 = CNTRule_Area(c, 1, 140)
-        rule1 = not CNTRule_Sphericity(c,accept_ratio=0.3)
-        rule2 =  CNTRule_AspectRatio(c, ASPECT_RATIO=4 )
+        #rule1 = not CNTRule_Sphericity(c,accept_ratio=0.3)
+        #rule2 =  CNTRule_AspectRatio(c, ASPECT_RATIO=4 )
  
         
         Rules_Passed= rule0 #and  rule1  and rule2
@@ -138,7 +138,7 @@ def VesselsFiltering(img, silence=False):
     img= cv2.bitwise_and(img,mask)
     
     vessels_mask=1-img/img.max()
-    ImU.PrintImg(vessels_mask,'img &mask')
+    if silence==False: ImU.PrintImg(vessels_mask,'img &mask')
     
 
 
@@ -152,7 +152,10 @@ def VesselsFiltering(img, silence=False):
 
     
     
-
+def DetectMicroAN(img,  silence=False):
+    #Under heavy development
+    
+    return 1
     
     
     

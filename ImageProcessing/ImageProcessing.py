@@ -131,10 +131,11 @@ def FeaturesDetection(img, total_mask, LOW=15, TP_MASK=True, KERNEL=15, EQ=False
     if silence==False: ImU.PrintImg(tophat,'tophat image')
     
     ret,thresh = cv2.threshold(tophat,LOW,1,cv2.THRESH_BINARY)
-    ImU.PrintImg(thresh,'tophat & threshold')
+    if silence==False:  ImU.PrintImg(thresh,'tophat & threshold')
 
     
-    '''    
+    '''
+    #-------------------Contrast correction... Very Beta ---------------------
     tophat=ImU.ContrastCorrection(tophat,1.5)
 
     
