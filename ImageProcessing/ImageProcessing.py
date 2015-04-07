@@ -278,6 +278,7 @@ def MatchedFilter(img):
       
     blend=cv2.add(max_responses,img)
     ImU.PrintImg(blend ,'img +max_responses ')
+
     #ret, otsu = cv2.threshold( blend,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
     #ImU.PrintImg(otsu,'max_responses otsu')
   

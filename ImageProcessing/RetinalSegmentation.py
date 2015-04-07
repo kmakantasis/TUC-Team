@@ -18,12 +18,31 @@ import ImageProcessing as ImP
 from numba import double
 from numba.decorators import jit
 
-@jit
+
 def DetectFlow_1(img):
 
     total_mask=Msk.TotalMask(img,silence=True )
-    Vessels = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
+    Vessels, theta_masked = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
     
+    count=0
+    idxs,idys = np.where(theta_masked > 0)
+    marked = np.zeros_like(img)
+    for k in range(len(idxs)):
+        x=idxs[k]
+        y=idys[k]
+        #search in 8 pixel neighbourhood
+        for i in range (-1,1,1):
+            for j in range (-1,1,1):
+                if marked[x+i][y+j]==0:
+                    delta = theta_masked[x+i][y+j]-theta_masked[x][y]
+                    if delta >30:count=count+1
+        
+    marked[x][y]=1
+    normalized_junctions= float(count)/len(idxs)
+        
+    print 'Counted junctions= %d, in total length:%d'% (count, len(idxs) )  
+    print 'Normalized junctions= %3.6f'% normalized_junctions
+                
     
     Vessels_res = cv2.resize(Vessels, (250, 250),  interpolation = cv2.INTER_AREA)   
     Vessels_skel= ImP.Skeletonize(np.uint8(Vessels_res) )    
@@ -53,7 +72,7 @@ def DetectVesselsFast(img, silence=True):
 
  
         
-@jit       
+@jit         
 def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
     #print "starting Detect Vessels"
     #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
@@ -132,7 +151,7 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
     for response in responses:
         np.maximum(max_response, response, max_response)
     '''        
-             
+           
     max_response = np.zeros( shape=(x,y), dtype="uint8" )
     max_response_theta = np.zeros( shape=(x,y), dtype="uint8" )
     max_pix=-1
@@ -181,13 +200,22 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
     
     if silence==False: ImU.PrintImg(final_vessels_mask,' final_vessels_mask & mask')    
     
-    #skel=ImP.Skeletonize(final_vessels_mask)
+    skel=ImP.Skeletonize(final_vessels_mask)
+    skel=skel/skel.max()
     
-    #if silence==False: ImU.PrintImg(skel,'skeletonize')
+    
+    thetas_masked =(max_response_theta +50)* skel#np.asarray(np.copy(max_response_theta), dtype=np.float)
+
+
+   # skel_angles= thetas_[idx_skel]
+    if silence==False: ImU.PrintImg(thetas_masked,'thetas_masked')
+    if silence==True: ImU.PrintImg(skel,'skeletonize')
+        
+        
     #cnt_filtered=CntP.VesselsFiltering(cnt_filtered)
     #ImU.PrintImg(cnt_filtered,'cnt_filtered') 
       
-    return final_vessels_mask#otsu/otsu.max()
+    return final_vessels_mask, thetas_masked#otsu/otsu.max()
         
 def DetectHE(img, gamma_offset=0, silence=False):
     

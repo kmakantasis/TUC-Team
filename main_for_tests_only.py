@@ -16,7 +16,7 @@ import ImageUtils as ImU
 import numpy as np
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[2,3,4], number_of_data=[300,300,300])
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[0,3,4], number_of_data=[300,300,300])
 
 names_labels= (names, labels )
 
@@ -70,6 +70,7 @@ for i in range(1):#range(names.shape[0]):
     gray=np.uint8(gray)
     
     RetSeg.DetectFlow_1(g) 
+
     
     #total_mask=Msk.TotalMask(g)
    #vessels_mask= RetSeg.DetectVessels(g,Msk.TotalMask(g), silence=False )
