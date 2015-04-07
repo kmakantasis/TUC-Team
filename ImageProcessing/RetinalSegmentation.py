@@ -23,19 +23,23 @@ def DetectFlow_1(img):
 
     total_mask=Msk.TotalMask(img,silence=True )
     Vessels = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
+    
+    
     Vessels_res = cv2.resize(Vessels, (250, 250),  interpolation = cv2.INTER_AREA)   
     Vessels_skel= ImP.Skeletonize(np.uint8(Vessels_res) )    
     #ImU.PrintImg(Vessels_skel,'Vessels_skel')
     
-    HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
-    HEs_Bin_res = cv2.resize(HEs_Bin, (250, 250),  interpolation = cv2.INTER_AREA)
+    #HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
+    #HEs_Bin=ImP.Dilate(HEs_Bin)
+   # HEs_Bin_res = cv2.resize(HEs_Bin, (250, 250),  interpolation = cv2.INTER_AREA)
+    #ImU.PrintImg(Vessels_skel,'Vessels_skel')
     
-    blend= Vessels_skel/Vessels_skel.max() + HEs_Bin_res/HEs_Bin_res.max()
+    #blend= Vessels_skel/Vessels_skel.max() + HEs_Bin_res/HEs_Bin_res.max()
 
     #ImU.PrintImg(blend,'blend')
     
     
-    return blend    
+    return Vessels_skel/Vessels_skel.max()  
     
         
 def DetectVesselsFast(img, silence=True):

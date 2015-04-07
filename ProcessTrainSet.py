@@ -68,7 +68,7 @@ def worker(name):
     return 1
  
 #choose the mode to run
-run_multiprocessor=0
+run_multiprocessor=1
 
 names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', 
                 labels_idx=[0,1,2,3,4], 
