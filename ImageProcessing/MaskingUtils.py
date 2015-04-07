@@ -5,9 +5,38 @@ import math
 import numpy as np
 import ImageUtils as ImU
 import ImageProcessing
+import ContourProcessing as CntP
+import MaskingUtils as Msk
 
 import cv2
  
+def TotalMask(img, silence=True): 
+
+    simple_mask_cirlualr=Msk.CircularMaskSimple(img)
+    x,y= Msk.Disc_Detect(img,'WHITE')
+    optic_disc_mask= Msk.DiscMask(img, x,y,80)
+   
+    total_mask= optic_disc_mask*simple_mask_cirlualr #*total_mask*
+    total_mask= total_mask/total_mask.max()
+    if silence == False: ImU.PrintImg(total_mask,'total_mask')
+    
+    return total_mask
+     
+ 
+def CircularMaskSimple(img):
+    
+    img_h, img_w = img.shape
+    x= int(img_w/2)
+    y= int(img_h/2)
+ 
+    black = np.ones(img.shape)
+    cv2.circle(black, (x,y), int(0.9*img_h/2), 0, -1)  # -1 to draw filled circles
+    
+
+    mask = 1 -black
+    #ImU.PrintImg(mask,'simple circular mask')
+    return mask
+
  
 def CircularDetectMasking(img, opening, silence=True):
     """            
@@ -379,7 +408,7 @@ def Flip_Rotation_Correct(r,g, LR_check, silence=False):
     # Choose if to rotate or not
     rows,cols = g.shape
     if abs(degs)<20:
-        M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1)
+        M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
         rot_g = cv2.warpAffine(g_original,M,(cols,rows)) # Rotation is done
         if silence==False:    
             plt.imshow(rot_g,cmap = 'gray')

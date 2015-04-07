@@ -4,6 +4,10 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 import math
 import cv2
+import ImageUtils as ImU
+import ImageProcessing
+from numba import double
+from numba.decorators import jit
  
  
 def CNTCentroid(cnt):
@@ -42,8 +46,8 @@ def CNTRule_KickOutCircular(img,cnt):
 def CNTRule_Area(cnt, MIN_THRESHOLD, MAX_THRESHOLD):
     return MIN_THRESHOLD< cv2.contourArea(cnt) and cv2.contourArea(cnt) < MAX_THRESHOLD
     
-def CNTRule_AspectRatio(c):
-    ASPECT_RATIO=4
+def CNTRule_AspectRatio(c, ASPECT_RATIO=4 ):
+  
     x,y,w,h = cv2.boundingRect(c)
     aspect_ratio = float(w)/h
     
@@ -95,13 +99,63 @@ def ContourFiltering(binary, silence=False):
       '''    
         
     return mask2                         
+
+def VesselsFiltering(img, silence=True):
+    img = cv2.GaussianBlur(img,(3,3),2) 
+    img=1- img/img.max() #ensure input is binary
+    #ret,img = cv2.threshold(img,0,1,cv2.THRESH_BINARY)
+    #ImU.PrintImg(img,'img')
+    cnt = cv2.findContours(img,cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE )[0]
+    
+
+    #cv2.drawContours(mask, cnt, -1, (0,50,100), 2)    
+    
+    # We sort and discard possible noisy features/artifacts
+    img_height, img_width = img.shape
+    #mask2 = np.ones(thresh.shape[:2], dtype="uint8") #* 255
+    mask = np.ones_like(img)
+    
+    for c in cnt :
+          
+        #-----we should put our rules here
+        Rules_Passed=False
+        
+        rule0 = CNTRule_Area(c, 1, 140)
+        #rule1 = not CNTRule_Sphericity(c,accept_ratio=0.3)
+        #rule2 =  CNTRule_AspectRatio(c, ASPECT_RATIO=4 )
+ 
+        
+        Rules_Passed= rule0 #and  rule1  and rule2
+            
+        if Rules_Passed :  
+            cv2.drawContours(mask, [c], -1, 0, -1)
+        
+        #mask2=1- mask2/mask2.max()
+    mask = cv2.GaussianBlur(mask,(3,3),2) 
+
+   # ImU.PrintImg(mask,'mask')
+    mask=mask
+    img= cv2.bitwise_and(img,mask)
+    
+    vessels_mask=1-img/img.max()
+    if silence==False: ImU.PrintImg(vessels_mask,'img &mask')
+    
+
+
+    
+    #ImU.PrintImg(img,'connected mask')
+    
+    return vessels_mask
             
     #quality_percent = float(quality_meter)/ (len(cnt)+1)
    # quality_mass_percent  =  float(quality_mass)/ (total_mass+1)
 
     
     
-
+def DetectMicroAN(img,  silence=False):
+    #Under heavy development
+    
+    return 1
     
     
     

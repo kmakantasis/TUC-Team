@@ -4,23 +4,31 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 import math
 import cv2
+from scipy.ndimage import label
+from scipy import ndimage
+from skimage.morphology import watershed
+from skimage.morphology import skeletonize
+import operator
 
 import ContourProcessing as CntP
 import ImageUtils as ImU
 import MaskingUtils as Msk
 
+from numba import double
+from numba.decorators import jit
 
-def Dilate(img, DIL=5, CLO=4, silence=True):
+
+def Dilate(img, DIL=2, KERNEL=3):
     dilate=img
     for i in range(1,DIL):
-        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i,i+1))
-        dilate  = cv2.dilate(dilate,kernel,iterations = 1)
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(KERNEL,KERNEL))
+        dilate  = cv2.dilate(dilate,kernel,iterations = DIL)
         
     return dilate
     
-def Erode(img, EROD=2, silence=True):
+def Erode(img, EROD=2, KERNEL=3):
   
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(KERNEL,KERNEL))
     erode = cv2.erode(img,kernel,iterations = EROD)
         
     return erode
@@ -31,6 +39,13 @@ def Closing(img, CLO=2, silence=True):
         kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i*3,1+i*3))
         closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=1)
     return closing
+    
+def Opening(img, OPEN=2, silence=True):   
+    for i in range(1,OPEN):
+        kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1+i,1+i))
+        opening = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+    return opening
+    
     
 def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     """            
@@ -82,7 +97,7 @@ def BasicMorphology(img, DIL=5, CLO=4, silence=True):
     return dilate, opening, closing
      
     
-def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15, EQ=False, silence=True):
+def FeaturesDetection(img, total_mask, LOW=15, TP_MASK=True, KERNEL=15, EQ=False, silence=True):
     """            
     Function definition
     +++++++++++++++++++
@@ -111,15 +126,16 @@ def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15
     tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
   
     #apply mask
-    tophat = np.array(tophat*total_mask, dtype="uint8") 
+    tophat = np.array(tophat*(total_mask/total_mask.max()), dtype="uint8") 
     
     if silence==False: ImU.PrintImg(tophat,'tophat image')
     
-    ret,thresh = cv2.threshold(tophat,LOW,HIGH,cv2.THRESH_BINARY)
-    ImU.PrintImg(thresh,'tophat & threshold')
+    ret,thresh = cv2.threshold(tophat,LOW,1,cv2.THRESH_BINARY)
+    if silence==False:  ImU.PrintImg(thresh,'tophat & threshold')
 
     
-    '''    
+    '''
+    #-------------------Contrast correction... Very Beta ---------------------
     tophat=ImU.ContrastCorrection(tophat,1.5)
 
     
@@ -131,77 +147,113 @@ def FeaturesDetection(img, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15
     
     if silence==False: ImU.PrintImg(tophat,'after tophat')
         
-    #threshold
    
-
-     
-    #thresh= np.array(thresh*total_mask, dtype="uint8")       
-      
-    #mask = np.ones(thresh.shape[:2], dtype="uint8") * 255  
-    
-
-
- 
     return tophat, thresh
 
+    
+def BuildGaborFlters():
+    #https://cvtuts.wordpress.com/2014/04/27/gabor-filters-a-practical-overview/
 
+    filters = [] #init list
+    ksize = 17
+    for theta in np.arange(0, np.pi, np.pi / 8):
+        kern = cv2.getGaborKernel((ksize, ksize), 3, theta, 8.0, 0.8, 0, ktype=cv2.CV_32F)
+        kern /= 1.0*kern.sum()
+        filters.append(kern)
+    return filters
+
+def ProcessGabor(img, filters):
+    accum = np.zeros_like(img)
+    for kern in filters:
+        fimg = cv2.filter2D(img, cv2.CV_8UC3, kern)
+        np.maximum(accum, fimg, accum)
+    return accum    
     
-def HistAdjust(img, gamma_offset=0, silence=True):
-    hist = cv2.calcHist([img],[0],None,[4],[0,256])
-    if silence==False:  
-        print ("Hist[0]=%3.3f" %hist[0])
-    #----histogram correction invariant to scale
-    height, width = img.shape
-    mpixels=height*width
-    print ("Hist mpixels=%3.3f" %mpixels)
-    
-          
-    if (hist[0]<mpixels/2.):
-        gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1 + gamma_offset
-        img= ImU.GammaCorrection(img,gamma)
-    else:
-        gamma=1 + gamma_offset
-        img= ImU.GammaCorrection(img,gamma)
-        
-    hist = cv2.calcHist([img],[0],None,[4],[0,256])
-    if silence==False:  
-        print ("After Gamma=%2.2f Hist[0]=%3.3f" %(gamma,hist[0]) )  
-        print ("channel mean=%3.3f" %np.mean(img))
-        
-    return img
 
 def MatchedFilter(img):
-    kernel = np.ones((5,5),np.float32)/25
-    kernel_x = np.ndarray( shape=(5,5), dtype="int" )
-    kernel_y = np.ndarray( shape=(5,5), dtype="int" )
+    '''
+    M = cv2.getRotationMatrix2D((cols/2,rows/2),degs,1) #cols/2,rows/2 defines the center of rotation, last argument is scale
+    rot_g = cv2.warpAffine(g_original,M,(cols,rows)) # Rotation is done    
     
+    '''
+    #---------------gabor filter testing
+    ImU.PrintImg(img,'img ')
+    filters= BuildGaborFlters()
+    gabor_filtered= ProcessGabor(img, filters)
+    #gabor_filtered=Closing(gabor_filtered)
+    #gabor_filtered= ProcessGabor(gabor_filtered, filters) 
+    ImU.PrintImg(gabor_filtered,'gabor_filtered ')    
     
-    img = cv2.GaussianBlur(img,(5,5),3) 
-   
-    kernel_x[0] = [-2, 0, 0, 0, +2]
-    kernel_x[1] = [-2, 0, 0, 0, +2]
-    kernel_x[2] = [-2, 0, 0, 0, +2]
-    kernel_x[3] = [-2, 0, 0, 0, +2]
-    kernel_x[4] = [-2, 0, 0, 0, +2]        
+    #hist_eq=cv2.equalizeHist(gabor_filtered)
     
-    kernel_y[0] = [-2,-2,-2,-2,-2]
-    kernel_y[1] = [ 0, 0, 0, 0, 0]
-    kernel_y[2] = [ 0, 0, 0, 0, 0]
-    kernel_y[3] = [ 0, 0, 0, 0, 0]
-    kernel_y[4] = [+2,+2,+2,+2,+2]
+    #ImU.PrintImg(hist_eq,'hist_eq gabor_filtered ')
     
-    pi= math.pi
-    thetas= [0, 0.5*pi, pi, 1.5*pi]
+    #ret,thresh = cv2.threshold(hist_eq,15,50,cv2.THRESH_BINARY)
+    #ImU.PrintImg(thresh,'hist_eq & threshold')
+
+    #adaptive thresh
+    #adaptiveThreshold=cv2.adaptiveThreshold(gabor_filtered,5,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,2)
+    #ImU.PrintImg(adaptiveThreshold,'gabor_filtered adaptiveThreshold ')    
+    
+    #otsu
+    #ret, otsu = cv2.threshold( gabor_filtered,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'max_responses otsu')
+    return 0
+    #--------end gabor filter testing  
     
     x,y=img.shape
+
+    img = cv2.GaussianBlur(img,(3,3),8) 
+    img = cv2.GaussianBlur(img,(7,7),4) 
+    
+    
+    #kernel_line =np.ndarray( shape=(1,5), dtype="int" )
+    #kernel_line = np.asarray( [-1, -0, -0, 0, 0, 0, +1] ) #perwitt
+    kernel_line = np.asarray( [-2, 0, 0,  0, +2] ) #perwitt
+    #kernel_line = np.asarray( [-1, -2, -3, -2, -1, 2, +1] ) #sobel
+    
+    smoothing_line  = np.asarray([ 1, 4, 6, 4, 1])
+    gradient_line= np.asarray([ 1, 2, 0,-2,-1])
+    
+    sobel_x= np.multiply.outer (smoothing_line,gradient_line)
+    sobel_y= np.multiply.outer (gradient_line,smoothing_line)
+    
+    KERNEL_SIZE =len(kernel_line)
+    
+    kernel_x  = [
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line,
+            kernel_line ]
+   
+    kernel_x=np.asarray(kernel_x).reshape((KERNEL_SIZE,KERNEL_SIZE))
+    
+    kernel_y = [
+            kernel_line.transpose(),
+            kernel_line.transpose(),
+            kernel_line.transpose(),
+            kernel_line.transpose(),
+            kernel_line.transpose()  ]
+
+    kernel_y=np.asarray(kernel_y).reshape((KERNEL_SIZE,KERNEL_SIZE)) 
+    
+    pi= math.pi
+    #thetas= [0, 0.25*pi, 0.5*pi, 0.75*pi, 1*pi]
+    #thetas= np.asarray([0,  0.125 ,  0.25 , 0.375 , 0.5 , 0.625, 0.75, 1 ] )
+    thetas= np.asarray([0, 0.5, 1 ] )
+    thetas=thetas*pi
+    
     dst= np.ndarray( shape=(x,y), dtype="uint8" )    
     responses=list()
     #responses = np.ndarray(shape=(4,x,y) , dtype="uint8")
     #i=0
     for theta in thetas:
-        kernel = kernel_x*math.cos(theta) + kernel_y*math.sin(theta)
+        #kernel = kernel_x*math.cos(theta) + kernel_y*math.sin(theta)
+        kernel = sobel_x*math.cos(theta) + sobel_y*math.sin(theta)/10.
         
         dst = cv2.filter2D(img,-1,kernel) #-1 means the same depth as original image
+      
        # responses[i]=dst
         #i=i+1        
         responses.append(dst)
@@ -212,107 +264,87 @@ def MatchedFilter(img):
 
     max_responses = np.zeros( shape=(x,y), dtype="uint8" )
     max_pix=-1
-    for x_pix in range(x-1):
-        for y_pix in range(y-1):
+    for x_pix in range(x):
+        for y_pix in range(y):
             
-            for z_pix in range(4-1):
+            for z_pix in range(len(thetas)):
                 if responses[z_pix][x_pix][y_pix]> max_pix: max_pix= responses[z_pix][x_pix][y_pix]
             
-        max_responses[x_pix][y_pix]=  max_pix
-        max_pix=-1  
-    
-    ImU.PrintImg(max_responses,'max_responses')
-    return 0
-          
-        
-def DetectHE(img, gamma_offset=0, silence=False):
-    
-    img=HistAdjust(img, gamma_offset=0, silence=True)
-    #img=ImU.GammaCorrection(img,4)
+            max_responses[x_pix][y_pix]=  max_pix
+            max_pix=-1
 
-    dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 
-    circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=True)
+    #
+    ImU.PrintImg(max_responses,'max_responses ')
+      
+    blend=cv2.add(max_responses,img)
+    ImU.PrintImg(blend ,'img +max_responses ')
+    #ret, otsu = cv2.threshold( blend,0,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'max_responses otsu')
+  
+    return max_responses
+##------------------------------------------------------very experimental zone
+ 
+         
+def find_circles(img):
     
-    x,y= Msk.Disc_Detect(img,'WHITE')
-    optic_disc_mask= Msk.DiscMask(circular_mask, x,y,65)
-    total_mask= total_mask*optic_disc_mask #*vessels_mask
+    #img = cv2.equalizeHist(img)    
+    #ret,otsu = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    #ImU.PrintImg(otsu,'THRESH_OTSU')
     
-    #opening=255-opening
-    # ImU.PrintImg(optic_disc_mask,'optic_disc_mask test')
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=10,EQ=False, silence=True) #default=opening
-    #tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100,  EQ=True, silence=True) #default=opening
-    #opening=ImU.ContrastCorrection(opening,1) 
+    params = cv2.SimpleBlobDetector_Params()
+ 
+    # Change thresholds
+    params.minThreshold = 30;
+    params.maxThreshold = 100;
+   
+    # Filter by Circularity
+    params.filterByCircularity = True
+    params.minCircularity = 0.6   
     
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=15,EQ=False, silence=True)
-    tophat = FeaturesDetection(opening, total_mask, LOW=15, HIGH=100, TP_MASK=True, KERNEL=20,EQ=False, silence=True)
+    # Filter by Convexity
+    params.filterByConvexity = True
+    params.minConvexity = 0.6
     
-    return tophat
-
-
-def DetectVessels(img, gamma_offset=0, silence=True):
-    
-    img=HistAdjust(img, gamma_offset=0, silence=True)
-    img=ImU.GammaCorrection(img,0.7)
-    
-    #only for mask
-    #dilate, closing, opening = BasicMorphology(img, DIL=3, CLO=4, silence=False)
-            
-    #circular_mask, fill_mask, circular_inv, total_mask = Msk.CircularDetectMasking(img, opening, silence=False)
-    
-    erode =  Erode(img, EROD=2, silence=True)    
-    
-    img=255-erode
-    
-
-    #tophat
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
-    tophat = cv2.morphologyEx(img, cv2.MORPH_TOPHAT, kernel)
+    # Filter by Area.
+    params.filterByArea = True
+    params.minArea = 300
+    params.maxArea = 1200
+      
+    detector = cv2.SimpleBlobDetector(params)
      
-    #closing
-    #tophat= Closing(tophat, CLO=6, silence=True)
-    #kernel  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-    #closing = cv2.morphologyEx(closing, cv2.MORPH_CLOSE, kernel, iterations=4)
-   
-    if silence==False: ImU.PrintImg(tophat,'after tophat')
-    #threshold
-    ret,thresh = cv2.threshold(tophat,10,50,cv2.THRESH_BINARY)
+    # Detect blobs.
+    keypoints = detector.detect(img)
+     
+    # Draw detected blobs as red circles.
+    # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
+    im_with_keypoints = cv2.drawKeypoints(img, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    im_with_keypoints = cv2.drawKeypoints(im_with_keypoints, keypoints, np.array([]), (0,255,0), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     
-    thresh =1-thresh/thresh.max()
+    ImU.PrintImg(im_with_keypoints,'im_with_keypoints')
+          
+    img = cv2.bilateralFilter(img, 11, 17, 17)
+ 
+    canny = cv2.Canny(img, 30, 60,  9) 
+    ImU.PrintImg(canny,'canny')
     
-    if silence==False: ImU.PrintImg(thresh,'tophat & threshold')    
+    laplacian = abs( cv2.Laplacian(img,cv2.CV_32F,ksize=9))
+    ImU.PrintImg(laplacian,'laplacian')
+       
+    sobel = abs(cv2.Sobel(img,cv2.CV_32F,1,1,ksize=31) )
+    ImU.PrintImg(sobel,'sobel')
     
-    #tophat, mask2 = FeaturesDetection(img, total_mask, EQ=False,  silence=False)
-    return thresh
-    
+    return img
 
-def CropImage(img, features, silence=True):
-    ret,thresh_flip = cv2.threshold(img,10,1,cv2.THRESH_BINARY)  
 
-    contours,hierarchy = cv2.findContours(thresh_flip, 1, 2)
-    
-    area = 0
-    for cnt in contours:
-        if area < cv2.contourArea(cnt):
-            area = cv2.contourArea(cnt)
-            largest_contour = cnt
-    
-    cnt = largest_contour
-    x,y,w,h = cv2.boundingRect(cnt)
-   
-    if w > h:
-        max_dim = w
-    else:
-        max_dim = h
+def Skeletonize(img):
+ 
+    img2=img/img.max()
+    img2 = skeletonize(img2) 
+     
+    return img2
+ 
 
-    cropped_img = np.zeros((max_dim, max_dim), dtype='uint8')
-    cropped_img[0:h, 0:w] = features[y:y+h,x:x+w]
-    
-    if silence == False:
-        plt.figure()
-        plt.imshow(cropped_img ,cmap = 'gray')    
-        plt.show()
-    
-    return cropped_img
+
 
    
 
