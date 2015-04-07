@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import sys
+#sys.path.append('../ImageProcessing')
+sys.path.append('../DataCreation')
 import numpy as np
 import cv2
 import matplotlib.pylab as plt
@@ -7,7 +10,7 @@ from scipy.ndimage.morphology import binary_fill_holes as fill_holes
 import scipy.spatial.distance as distance
 import sklearn.svm as SVM
 from sklearn.metrics import confusion_matrix
-import score
+#import score
 import time   
 import LoadData 
 
@@ -117,17 +120,18 @@ def DetectAneurysms(b_3, thres, silence=True):
 
 if __name__ == '__main__':
     
-    names, labels = LoadData.ImageDatasetCreation(labels_idx=[0,1,2,3,4], number_of_data=[2012, 2443, 2012, 873, 708], LRB='both')
+    names, labels = LoadData.ImageDatasetCreation(csv_name='../CSV/trainLabels.csv',labels_idx=[0,1,2,3,4], number_of_data=[2012, 2443, 2012, 873, 708], LRB='both')
     
-#    start_time = time.time()
+#    names = np.array(['16_right'])
+    start_time = time.time()
     
     dataset = []
-    for i in range(names.shape[0]):
+    for i in range(1):
 #        print i+1
     
-        filename = '../data/resized/%s.jpg'%names[i]
+        filename = '../../data/train_resized/%s.jpg'%names[i]
         
-#        print names[i]
+        print labels[np.where(names==names[i])]
     
         original = mpimg.imread(filename)
         img = cv2.imread(filename)
@@ -137,82 +141,82 @@ if __name__ == '__main__':
         
         b_3 = RemoveNoise(enhanced, silence=True)
     
-        thres = 110
+        thres = 150
         detections = np.zeros((g.shape[0], g.shape[1]), dtype=np.uint8)
         while thres < 250:
             des = DetectAneurysms(b_3, thres, silence=True)
             detections = np.logical_or(detections, des)
             thres = thres + 20
    
-#        print("--- %s seconds ---" % (time.time() - start_time))
+        print("--- %s seconds ---" % (time.time() - start_time))
+    
+        idx = np.where(detections==1)
+        det_over = np.copy(b_3)
+        det_over[idx] = 255.   
+        plt.figure()
+        plt.subplot(2,2,1)
+        plt.imshow(b_3, cmap='gray')
+
+        plt.subplot(2,2,2)
+        plt.imshow(detections, cmap='gray')
+    
+        plt.subplot(2,2,3)
+        plt.imshow(det_over, cmap='gray')
+    
+        plt.subplot(2,2,4)
+        plt.imshow(original)
+        
+        plt.show()    
+    
+    
+#        test = np.zeros((detections.shape[0], detections.shape[1]), dtype=np.uint8)
+#        contour,hier = cv2.findContours(detections.astype(np.uint8),cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
 #    
-#        idx = np.where(detections==1)
-#        det_over = np.copy(b_3)
-#        det_over[idx] = 255.   
-#        plt.figure()
-#        plt.subplot(2,2,1)
-#        plt.imshow(b_3, cmap='gray')
-#
-#        plt.subplot(2,2,2)
-#        plt.imshow(detections, cmap='gray')
+#        total_area = 0
+#        aneurysms_no = len(contour)
+#        centroids = []
+#        for cnt in contour:
+#            cv2.drawContours(test,[cnt],0,255,-1)
+#            area = cv2.contourArea(cnt)
+#            M = cv2.moments(cnt)
+#            cx = int(M['m10']/M['m00'])
+#            cy = int(M['m01']/M['m00'])
+#            centroids.append(np.array((cx, cy)))
+#            total_area = total_area + area
 #    
-#        plt.subplot(2,2,3)
-#        plt.imshow(det_over, cmap='gray')
+#        if len(centroids) > 1:
+#            distance_avg = np.mean(distance.pdist(np.asarray(centroids)))
+#        else:
+#            distance_avg = 0.0
+#           
+#           
+#           
+#        label = labels[np.where(names==names[i])][0]
 #    
-#        plt.subplot(2,2,4)
-#        plt.imshow(original)
+#        entry = np.array((aneurysms_no, total_area, distance_avg, label))
+#    
+#        dataset.append(entry)
 #        
-#        plt.show()    
-    
-    
-        test = np.zeros((detections.shape[0], detections.shape[1]), dtype=np.uint8)
-        contour,hier = cv2.findContours(detections.astype(np.uint8),cv2.RETR_CCOMP,cv2.CHAIN_APPROX_SIMPLE)
-    
-        total_area = 0
-        aneurysms_no = len(contour)
-        centroids = []
-        for cnt in contour:
-            cv2.drawContours(test,[cnt],0,255,-1)
-            area = cv2.contourArea(cnt)
-            M = cv2.moments(cnt)
-            cx = int(M['m10']/M['m00'])
-            cy = int(M['m01']/M['m00'])
-            centroids.append(np.array((cx, cy)))
-            total_area = total_area + area
-    
-        if len(centroids) > 1:
-            distance_avg = np.mean(distance.pdist(np.asarray(centroids)))
-        else:
-            distance_avg = 0.0
-           
-           
-           
-        label = labels[np.where(names==names[i])][0]
-    
-        entry = np.array((aneurysms_no, total_area, distance_avg, label))
-    
-        dataset.append(entry)
-        
-    data = np.asarray(dataset)
-    features = data[:,0:3]
-    targets = data[:,3]
-        
-    X_train = features[0:7000,:]
-    Y_train = targets[0:7000]
-
-    X_test = features[7000:,:]
-    Y_test = targets[7000:]
-
-    clf = SVM.SVC(class_weight={0: 1.2, 1:1.2, 2:1.0, 3:3., 4:3.4})
-    clf.fit(X_train, Y_train)
-
-    predictions = clf.predict(X_train)  
-    cm = confusion_matrix(Y_train, predictions)
-    rater_a = list(predictions.astype(np.int))
-    rater_b = list(Y_train.astype(np.int))
-    k = score.kappa(rater_a, rater_b)
-        
-    print 'kappa score:%f'%k
+#    data = np.asarray(dataset)
+#    features = data[:,0:3]
+#    targets = data[:,3]
+#        
+#    X_train = features[0:7000,:]
+#    Y_train = targets[0:7000]
+#
+#    X_test = features[7000:,:]
+#    Y_test = targets[7000:]
+#
+#    clf = SVM.SVC(class_weight={0: 1.2, 1:1.2, 2:1.0, 3:3., 4:3.4})
+#    clf.fit(X_train, Y_train)
+#
+#    predictions = clf.predict(X_train)  
+#    cm = confusion_matrix(Y_train, predictions)
+#    rater_a = list(predictions.astype(np.int))
+#    rater_b = list(Y_train.astype(np.int))
+#    k = score.kappa(rater_a, rater_b)
+#        
+#    print 'kappa score:%f'%k
 
         
    
