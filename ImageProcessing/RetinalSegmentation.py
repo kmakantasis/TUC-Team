@@ -19,11 +19,30 @@ from numba import double
 from numba.decorators import jit
 
 
+    
 def DetectFlow_1(img):
 
     total_mask=Msk.TotalMask(img,silence=True )
     Vessels, theta_masked = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
     
+ 
+    Vessels_res = cv2.resize(Vessels, (250, 250),  interpolation = cv2.INTER_AREA)   
+    Vessels_skel= ImP.Skeletonize(np.uint8(Vessels_res) )    
+    #ImU.PrintImg(Vessels_skel,'Vessels_skel')
+    
+    #HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
+    #HEs_Bin=ImP.Dilate(HEs_Bin)
+   # HEs_Bin_res = cv2.resize(HEs_Bin, (250, 250),  interpolation = cv2.INTER_AREA)
+    #ImU.PrintImg(Vessels_skel,'Vessels_skel')
+    
+    #blend= Vessels_skel/Vessels_skel.max() + HEs_Bin_res/HEs_Bin_res.max()
+
+    #ImU.PrintImg(blend,'blend')
+    
+    
+    return Vessels_skel/Vessels_skel.max()  
+ 
+def VesselDescrpiptor(skel, theta_masked):
     count=0
     idxs,idys = np.where(theta_masked > 0)
     marked = np.zeros_like(img)
@@ -42,24 +61,8 @@ def DetectFlow_1(img):
         
     print 'Counted junctions= %d, in total length:%d'% (count, len(idxs) )  
     print 'Normalized junctions= %3.6f'% normalized_junctions
-                
     
-    Vessels_res = cv2.resize(Vessels, (250, 250),  interpolation = cv2.INTER_AREA)   
-    Vessels_skel= ImP.Skeletonize(np.uint8(Vessels_res) )    
-    #ImU.PrintImg(Vessels_skel,'Vessels_skel')
-    
-    #HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
-    #HEs_Bin=ImP.Dilate(HEs_Bin)
-   # HEs_Bin_res = cv2.resize(HEs_Bin, (250, 250),  interpolation = cv2.INTER_AREA)
-    #ImU.PrintImg(Vessels_skel,'Vessels_skel')
-    
-    #blend= Vessels_skel/Vessels_skel.max() + HEs_Bin_res/HEs_Bin_res.max()
-
-    #ImU.PrintImg(blend,'blend')
-    
-    
-    return Vessels_skel/Vessels_skel.max()  
-    
+   
         
 def DetectVesselsFast(img, silence=True):
     img = cv2.GaussianBlur(img,(3,3),8)
@@ -209,7 +212,7 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
 
    # skel_angles= thetas_[idx_skel]
     if silence==False: ImU.PrintImg(thetas_masked,'thetas_masked')
-    if silence==True: ImU.PrintImg(skel,'skeletonize')
+    if silence==False: ImU.PrintImg(skel,'skeletonize')
         
         
     #cnt_filtered=CntP.VesselsFiltering(cnt_filtered)

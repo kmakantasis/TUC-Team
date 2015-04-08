@@ -7,6 +7,9 @@ import cv2
 import numpy as np
 import ImageProcessing
 import LoadData
+import RetinalSegmentation as RetSeg
+import ImageUtils as ImU
+import MaskingUtils as Msk
 import multiprocessing
 import os
 
@@ -38,24 +41,24 @@ def worker(name):
    # counter = counter + 1
     
     img_name = '../data/test_resized/%s.jpg'%name
-    print ('Complete Image path: '),(img_name)
+    #print ('Complete Image path: '),(img_name)
     
-    img = ImageProcessing.LoadImage(img_name)
+    img = ImU.LoadImage(img_name)
 
-    r,g,b = ImageProcessing.SplitImage(img, silence=True)
+    r,g,b = ImU.SplitImage(img, silence=True)
     
     #----Antonis new stuff: Flip and Rotation Correct -------    
-    g_flip_rotated, white_xy, dark_xy  = ImageProcessing.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)    
+    g_flip_rotated, white_xy, dark_xy  = Msk.Flip_Rotation_Correct(r,g, name.split('_')[1], silence=True)    
     g=g_flip_rotated
     #----end Antonis new stuff ---
 
-    #-->Kostas if you like to bulid the triangular mask use the white_xy and dark_xy cooridnate tuples 
+    res=255*RetSeg.DetectFlow_1(g)
 
-    features, mask2 = ImageProcessing.DetectHE(g, silence=True)
-    
-    cropped_image = ImageProcessing.CropImage(g, features, silence=True)
-
-    res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
+#    features, mask2 = ImageProcessing.DetectHE(g, silence=True)
+#    
+#    cropped_image = ImageProcessing.CropImage(g, features, silence=True)
+#
+#    res = cv2.resize(cropped_image, (250, 250),  interpolation = cv2.INTER_AREA)
 
     out_name = '../data/input_test/%s.jpg'%name
     ret = cv2.imwrite(out_name, res)
