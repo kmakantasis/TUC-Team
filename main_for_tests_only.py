@@ -16,7 +16,7 @@ import ImageUtils as ImU
 import numpy as np
 
 
-names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[0,3,4], number_of_data=[300,300,300])
+names, labels = LoadData.ImageDatasetCreation(csv_name='./CSV/trainLabels.csv', labels_idx=[0,1,2,3,4], number_of_data=[300,300,300,300,300])
 
 names_labels= (names, labels )
 
@@ -52,7 +52,10 @@ for i in range(1):#range(names.shape[0]):
 
     #name ='5140_left' #no XE, more subtle deformations
 
-    #name ='5032_left'
+    
+    #name ='1008_right'
+    #name ='4130_left'
+    #name ='1099_right'
 
     img_name = '../data/train_resized/%s.jpg'%name
     
@@ -69,8 +72,21 @@ for i in range(1):#range(names.shape[0]):
     
     gray=np.uint8(gray)
     
-    RetSeg.DetectFlow_1(g) 
+    #RetSeg.DetectFlow_1(g) 
+    #img2 =  cv2.imread(img_name)
+    
+    hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    
+    ImU.AverageHue(hsv_img)
+    d_theta= 360. / 8
+    for theta in np.arange(0, 360,d_theta/2):
+        ORANGE_MIN = np.array([theta, 50, 50],np.uint8)
+        ORANGE_MAX = np.array([theta+d_theta, 250, 250],np.uint8)
+        orange_mask = cv2.inRange(hsv_img, ORANGE_MIN, ORANGE_MAX)
+        ImU.PrintImg(orange_mask,'orange_mask')
+        print('d_theta=%d' % theta)
 
+ 
     
     #total_mask=Msk.TotalMask(g)
    #vessels_mask= RetSeg.DetectVessels(g,Msk.TotalMask(g), silence=False )

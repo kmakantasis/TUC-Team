@@ -17,6 +17,16 @@ def PrintImg(im_r, meassage):
     plt.imshow(im_r, cmap = 'gray')
     plt.show()
 
+def PrintImgColor(im_BGR, meassage):
+    im_RGB=cv2.cvtColor(im_BGR,cv2.COLOR_BGR2RGB) 
+    
+    plt.figure()
+    plt.title(meassage)
+    plt.axis('off')
+    plt.imshow(im_RGB, cmap = 'gray')
+    plt.show()
+    
+
 def ImageRescale(im_r, TARGET_MPIXELS=1e6, GRAY=False):   
     if GRAY==False:
         height, width, depth = im_r.shape
@@ -37,7 +47,10 @@ def ImageRescale(im_r, TARGET_MPIXELS=1e6, GRAY=False):
     crop_size = int (abs(width - height)/2)
     cropped_im_r = im_r[ 0:height-1, crop_size:width-crop_size-1]
     
-    return np.uint8(cropped_im_r)
+    if GRAY==False: 
+        return  cropped_im_r
+    else:
+        return np.uint8(cropped_im_r)
 
 
 def LoadImage(img_name):
@@ -54,7 +67,7 @@ def LoadImage(img_name):
             :rtype: image - three dimensional numpy array or one dimensional if image is grayscale.
     """
     im_r = cv2.imread(img_name)
-    im_r = ndimage.median_filter(im_r, 6)
+    #im_r = ndimage.median_filter(im_r, 6)
     im_r = ImageRescale(im_r)
     
     return im_r
@@ -160,6 +173,18 @@ def BandCorrection(img, A=127, B=255, factor=0.5):
                 img2[x][y]=pix
     
     return np.uint8(img2)
+     
+def AverageHue(img):
+    width,height, depth=img.shape
+ 
+    hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    h_sum= hsv_img[0].sum()
+    h_avg=  float(h_sum) /(width*height)
+    
+    print('h_sum=%.4f' % h_sum)
+    print('h_avg=%.4f' % h_avg)
+    return   h_avg 
+    
 
 def ContrastCorrection(img, correction):
 
