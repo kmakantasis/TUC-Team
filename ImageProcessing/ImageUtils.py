@@ -129,14 +129,18 @@ def GammaCorrection(img, correction):
     return np.uint8(img*255)
     
 def HistAdjust(img, gamma_offset=0, silence=True):
-    hist = cv2.calcHist([img],[0],None,[4],[0,256])
-    if silence==False:  
-        print ("Hist[0]=%3.3f" %hist[0])
-    #----histogram correction invariant to scale
     height, width = img.shape
     mpixels=height*width
-    print ("Hist mpixels=%3.3f" %mpixels)
-    
+    hist = cv2.calcHist([img],[0],None,[4],[0,256])
+    if silence==False:
+        print ("\nchannel mean=%3.3f" %np.mean(img))
+        print ("Hist Bands [0]=%3.3f" % (hist[0]/mpixels) )
+        print ("Hist Bands [1]=%3.3f" % (hist[1]/mpixels) )
+        print ("Hist Bands [2]=%3.3f" % (hist[2]/mpixels) )
+        print ("Hist Bands [3]=%3.3f" % (hist[3]/mpixels) )
+                
+    #----histogram correction invariant to scale
+
           
     if (hist[0]<mpixels/2.):
         gamma= abs(0.55*mpixels-hist[0])/(0.2*mpixels) +1 + gamma_offset
@@ -147,9 +151,12 @@ def HistAdjust(img, gamma_offset=0, silence=True):
         
     hist = cv2.calcHist([img],[0],None,[4],[0,256])
     if silence==False:  
-        print ("After Gamma=%2.2f Hist[0]=%3.3f" %(gamma,hist[0]) )  
+        print ("\nAfter Gamma=%2.2f " %gamma )  
         print ("channel mean=%3.3f" %np.mean(img))
-        
+        print ("Hist Bands [0]=%3.3f" % (hist[0]/mpixels) )
+        print ("Hist Bands [1]=%3.3f" % (hist[1]/mpixels) )
+        print ("Hist Bands [2]=%3.3f" % (hist[2]/mpixels) )
+        print ("Hist Bands [3]=%3.3f" % (hist[3]/mpixels) )        
     return img
        
     
@@ -185,16 +192,12 @@ def AverageHue(img):
     print('h_avg=%.4f' % h_avg)
     return   h_avg 
 
-def AverageIntensity(img):
-    width,height, depth=img.shape
- 
- 
-    i_sum= img.sum()
-    i_avg=  float(i_sum) /(width*height)
-    
-    print('i_sum=%.4f' % i_sum)
-    print('i_avg=%.4f' % i_avg)
-    return   i_avg     
+def AverageIntensity(img):#for grey images only
+    width,height=img.shape
+   
+    print ("channel mean=%3.3f" %np.mean(img))
+
+    return   np.mean     
 
 def kmeans(image, segments=8):
        #Preprocessing step

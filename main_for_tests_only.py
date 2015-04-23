@@ -76,6 +76,11 @@ for i in range(1):#range(names.shape[0]):
     #img2 =  cv2.imread(img_name)
     
 
+    HEs_Grey, HEs_Bin = RetSeg.DetectHE(g, gamma_offset=0, silence=True)
+    ImU.PrintImg(HEs_Grey,'HEs_Grey')
+    ImU.PrintImg(HEs_Bin,'HEs_Bin')
+    ImU.AverageIntensity(g)
+    ImU.PrintImg(g,'g') 
     
     ''' 
     #---------HUE processing Example--------
