@@ -20,13 +20,18 @@ from numba.decorators import jit
 
 
     
-def DetectFlow_1(img):
+def DetectFlow_1(img,kernel_divide=8 ):
 
-    total_mask=Msk.TotalMask(img,silence=True )
-    Vessels, theta_masked = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
+    #total_mask=Msk.TotalMask(img,silence=True )
+    
+    total_mask= Msk.CircularMaskSimple(img)
+    
+    Vessels, theta_masked = DetectVessels(img,total_mask, kernel_divide, ContureFilter=True, silence=True)
     
     Vessels_res = cv2.resize(Vessels, (250, 250),  interpolation = cv2.INTER_AREA)   
-    Vessels_skel= ImP.Skeletonize(np.uint8(Vessels_res) )    
+    Vessels_skel= ImP.Skeletonize(np.uint8(Vessels_res) )
+    
+    ImU.PrintImg(Vessels_res,'Vessels_res')    
     #ImU.PrintImg(Vessels_skel,'Vessels_skel')
     
     #HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
@@ -99,7 +104,7 @@ def DetectVesselsFast(img, silence=True):
  
         
 @jit         
-def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
+def DetectVessels(img, total_mask, kernel_divide=10, ContureFilter=True, silence=True):
     #print "starting Detect Vessels"
     #img=ImU.ImageRescale(img, TARGET_MPIXELS=0.5e6, GRAY=True)
     #kernel = np.ones((5,5),np.float32)/25
@@ -164,7 +169,7 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
         rot_kernel = cv2.warpAffine(kernel,M,(16,16), borderValue=10) # Rotation is done
         #ImU.PrintImg(rot_kernel,'rot kernel') 
         rot_kernel=(rot_kernel.astype(int)-10).astype(int)
-        rot_kernel=rot_kernel/8.
+        rot_kernel=rot_kernel/float(kernel_divide)
         rot_kernels.append(rot_kernel)
         
         dst = cv2.filter2D(img,-1,rot_kernel) #-1 means the same depth as original image         
@@ -194,7 +199,7 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
    
            
     #max_response=max_responses[0]
-    ret,thresh = cv2.threshold(max_response,30,127,cv2.THRESH_BINARY_INV) 
+    ret,thresh = cv2.threshold(max_response,30,1,cv2.THRESH_BINARY_INV) 
      
     #max_response=Dilate(max_response, DIL=4, KERNEL=2)
     #max_response=Opening(max_response, OPEN=4) 

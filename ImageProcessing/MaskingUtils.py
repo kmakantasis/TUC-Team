@@ -22,6 +22,10 @@ def TotalMask(img, silence=True):
     
     return total_mask
      
+
+
+     
+ 
  
 def CircularMaskSimple(img):
     

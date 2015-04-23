@@ -4,6 +4,8 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 import cv2
 import math
+import MaskingUtils as Msk
+import ImageUtils as ImU
 from numba import double
 from numba.decorators import jit
 import copy
@@ -71,6 +73,27 @@ def LoadImage(img_name):
     im_r = ImageRescale(im_r)
     
     return im_r
+
+   
+    
+def ExtractPatch_W(img, radius,silence=False): 
+    x,y= Msk.Disc_Detect(img,'WHITE')
+    cropped_img = img[ y-radius:y+radius, x-radius:x+radius]
+    
+    if silence == False: 
+        ImU.PrintImg(cropped_img,'cropped_img')
+ 
+    return cropped_img
+    
+def ExtractPatch_B(img, radius,silence=False): 
+    x,y= Msk.Disc_Detect(img,'DARK')
+    cropped_img = img[ y-radius:y+radius, x-radius:x+radius]
+    
+    if silence == False: 
+        ImU.PrintImg(cropped_img,'cropped_img')
+        
+    return cropped_img
+    
 
 def SplitImage(img, equalize = False, silence=False):    
     """            

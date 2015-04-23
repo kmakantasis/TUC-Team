@@ -72,10 +72,14 @@ for i in range(1):#range(names.shape[0]):
     
     gray=np.uint8(gray)
     
-    #RetSeg.DetectFlow_1(g) 
+    RetSeg.DetectFlow_1(g) 
     #img2 =  cv2.imread(img_name)
+   
+    WHITE_DISC=ImU.ExtractPatch_W (g, 150)
+    RetSeg.DetectFlow_1(WHITE_DISC, kernel_divide=15)
     
-    RetSeg.DetectFlow_2(g)
+    DARK_DISC=ImU.ExtractPatch_B (g, 180) 
+    RetSeg.DetectFlow_1(DARK_DISC,kernel_divide=8)
  
     
     ''' 
