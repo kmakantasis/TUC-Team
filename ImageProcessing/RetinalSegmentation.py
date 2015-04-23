@@ -25,7 +25,6 @@ def DetectFlow_1(img):
     total_mask=Msk.TotalMask(img,silence=True )
     Vessels, theta_masked = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
     
- 
     Vessels_res = cv2.resize(Vessels, (250, 250),  interpolation = cv2.INTER_AREA)   
     Vessels_skel= ImP.Skeletonize(np.uint8(Vessels_res) )    
     #ImU.PrintImg(Vessels_skel,'Vessels_skel')
@@ -41,6 +40,30 @@ def DetectFlow_1(img):
     
     
     return Vessels_skel/Vessels_skel.max()  
+    
+def DetectFlow_2(img):
+
+    total_mask=Msk.TotalMask(img,silence=True )
+    Vessels, theta_masked = DetectVessels(img,total_mask, ContureFilter=True, silence=True)
+    Vessels=1-Vessels
+    ImU.PrintImg(Vessels,'Vessels')
+    
+    HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
+    HEs_Bin=ImP.Dilate(HEs_Bin)
+    ImU.PrintImg(HEs_Bin,'HEs_Bin')
+    
+    HEs_Bin_Filtered=HEs_Bin*Vessels
+    ImU.PrintImg(HEs_Bin_Filtered,'HEs_Bin_Filtered')
+    
+    #HEs_Bin_res = cv2.resize(HEs_Bin, (250, 250),  interpolation = cv2.INTER_AREA)
+    #ImU.PrintImg(Vessels_skel,'Vessels_skel')
+    
+    #blend= Vessels_skel/Vessels_skel.max() + HEs_Bin_res/HEs_Bin_res.max()
+
+    #ImU.PrintImg(blend,'blend')
+    
+    
+    return 0      
  
 def VesselDescrpiptor(skel, theta_masked):
     count=0
@@ -222,7 +245,7 @@ def DetectVessels(img, total_mask, ContureFilter=True, silence=True):
         
 def DetectHE(img, gamma_offset=0, silence=False):
     
-    img=ImU.HistAdjust(img, gamma_offset=0, silence=False)
+    img=ImU.HistAdjust(img, gamma_offset=0, silence=True)
     #img=ImU.GammaCorrection(img,4)
 
     dilate, closing, opening = ImP.BasicMorphology(img, DIL=3, CLO=3, silence=silence) #golden params so far DIL=3, CLO=3 

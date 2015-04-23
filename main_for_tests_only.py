@@ -75,12 +75,8 @@ for i in range(1):#range(names.shape[0]):
     #RetSeg.DetectFlow_1(g) 
     #img2 =  cv2.imread(img_name)
     
-
-    HEs_Grey, HEs_Bin = RetSeg.DetectHE(g, gamma_offset=0, silence=True)
-    ImU.PrintImg(HEs_Grey,'HEs_Grey')
-    ImU.PrintImg(HEs_Bin,'HEs_Bin')
-    ImU.AverageIntensity(g)
-    ImU.PrintImg(g,'g') 
+    RetSeg.DetectFlow_2(g)
+ 
     
     ''' 
     #---------HUE processing Example--------
@@ -104,10 +100,10 @@ for i in range(1):#range(names.shape[0]):
     #ImU.PrintImg(g_kmenas_out,'g_kmenas_out')
     
     #total_mask=Msk.TotalMask(g)
-   #vessels_mask= RetSeg.DetectVessels(g,Msk.TotalMask(g), silence=False )
+    #vessels_mask= RetSeg.DetectVessels(g,Msk.TotalMask(g), silence=False )
 
-   #g2=ImU.BandCorrection(g,160,255, 0.6)
-   # vessels_mask= ImageProcessing.DetectVessels(g2 )
+    #g2=ImU.BandCorrection(g,160,255, 0.6)
+    # vessels_mask= ImageProcessing.DetectVessels(g2 )
   
     #ImU.PrintImg(img2,'img2')
     
