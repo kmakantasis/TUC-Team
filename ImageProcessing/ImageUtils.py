@@ -151,7 +151,8 @@ def GammaCorrection(img, correction):
     img = cv2.pow(img, correction)
     return np.uint8(img*255)
     
-def HistAdjust(img, gamma_offset=0, silence=True):
+def HistAdjust(img2, gamma_offset=0, silence=True):
+    img=np.copy(img2)
     height, width = img.shape
     mpixels=height*width
     hist = cv2.calcHist([img],[0],None,[4],[0,256])

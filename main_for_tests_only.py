@@ -7,9 +7,10 @@ sys.path.append('./ImageProcessing')
 sys.path.append('./DataCreation')
 import cv2
 import numpy
-import ImageProcessing
+import ImageProcessing as ImP
 import RetinalSegmentation as RetSeg
 import MaskingUtils as Msk
+import Microaneurisms as MicroAns
  
 import LoadData
 import ImageUtils as ImU
@@ -72,14 +73,49 @@ for i in range(1):#range(names.shape[0]):
     
     gray=np.uint8(gray)
     
-    RetSeg.DetectFlow_1(g) 
+    
     #img2 =  cv2.imread(img_name)
    
+    '''
     WHITE_DISC=ImU.ExtractPatch_W (g, 150)
     RetSeg.DetectFlow_1(WHITE_DISC, kernel_divide=15)
     
     DARK_DISC=ImU.ExtractPatch_B (g, 180) 
     RetSeg.DetectFlow_1(DARK_DISC,kernel_divide=8)
+    '''
+    
+    
+    #-------------------microans-------------------
+    g2=ImU.HistAdjust(g)
+    total_mask= Msk.CircularMaskSimple(g2)
+    Vessels, theta_masked = RetSeg.DetectVessels(g,total_mask, kernel_divide=4, ContureFilter=True, silence=True)
+    Vessels_mask=1-Vessels
+    #Vessels_mask=ImP.Erode(Vessels_mask)
+    ImU.PrintImg(Vessels_mask,'Vessels_mask')
+    ImU.PrintImg(total_mask,'total_mask')
+    g=g#*total_mask
+    
+    enhanced = MicroAns.EnhanceContrast(g, r=3, silence=True)
+    
+    b_3 = MicroAns.RemoveNoise(enhanced, silence=True)
+
+    thres = 150
+    detections = np.zeros((g.shape[0], g.shape[1]), dtype=np.uint8)
+    while thres < 250:
+        des = MicroAns.DetectAneurysms(b_3, thres, silence=True)
+        detections = np.logical_or(detections, des)
+        thres = thres + 20
+   
+   
+    ImU.PrintImg(detections,'detections')
+    detections=detections*Vessels_mask
+    ImU.PrintImg(detections,'detections filtered')
+    
+    idx = np.where(detections==1)
+    det_over = np.copy(b_3)
+    det_over[idx] = 255.  
+    
+    ImU.PrintImg(det_over,'det_over')
  
     
     ''' 
