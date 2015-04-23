@@ -34,8 +34,9 @@ def DetectFlow_1(img,kernel_divide=8 ):
     ImU.PrintImg(Vessels_res,'Vessels_res')    
     #ImU.PrintImg(Vessels_skel,'Vessels_skel')
     
-    #HEs_Grey, HEs_Bin = DetectHE(img, gamma_offset=0, silence=True)
+    HEs_Grey, HEs_Bin = DetectHE(img, EQ=True, gamma_offset=0, silence=True)
     #HEs_Bin=ImP.Dilate(HEs_Bin)
+    ImU.PrintImg(HEs_Grey,'HEs_Grey')
     #HEs_Bin_res = cv2.resize(HEs_Bin, (250, 250),  interpolation = cv2.INTER_AREA)
     #ImU.PrintImg(Vessels_skel,'Vessels_skel')
     
@@ -248,7 +249,7 @@ def DetectVessels(img, total_mask, kernel_divide=10, ContureFilter=True, silence
       
     return final_vessels_mask, thetas_masked#otsu/otsu.max()
         
-def DetectHE(img, gamma_offset=0, silence=False):
+def DetectHE(img, EQ=False, gamma_offset=0, silence=False):
     
     img=ImU.HistAdjust(img, gamma_offset=0, silence=True)
     #img=ImU.GammaCorrection(img,4)
