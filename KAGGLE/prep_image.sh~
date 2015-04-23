@@ -13,7 +13,7 @@
 
 size=256x256
 
-out_dir=./processed/run-normal
+out_dir=processed/run-normal
 mkdir -p $out_dir/train
 mkdir -p $out_dir/test
 out=$out_dir/$1
