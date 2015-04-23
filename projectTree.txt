@@ -1,0 +1,26 @@
+DiabeticRetinopathy
+-------------------
+--data
+    --input
+        --input images to CNN
+    --resized
+        --10_right.jpg
+          .
+          .
+          .
+    --disc_template.jpg
+    --fovea_template.jpg
+    --trainLabels.csv
+
+--DataCreation
+    --LoadData.py
+
+--ImageProcessing
+    --ImageProcessing.py
+
+--CNN
+    --CNNLoadData.py
+    --ConvPoolLayer.py
+    --LogisticLayer.py
+    --MultiLayerPerceptron.py
+    --SGDcnn.py
