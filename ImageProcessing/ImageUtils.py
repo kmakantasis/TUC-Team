@@ -18,7 +18,7 @@ def PrintImg(im_r, meassage):
     plt.show()
 
 def PrintImgColor(im_BGR, meassage):
-    im_RGB=cv2.cvtColor(im_BGR,cv2.COLOR_BGR2RGB) 
+    im_RGB=cv2.cvtColor(im_BGR,cv2.COLOR_BGR2RGB) #channel rotation
     
     plt.figure()
     plt.title(meassage)
@@ -184,7 +184,32 @@ def AverageHue(img):
     print('h_sum=%.4f' % h_sum)
     print('h_avg=%.4f' % h_avg)
     return   h_avg 
+
+def AverageIntensity(img):
+    width,height, depth=img.shape
+ 
+ 
+    i_sum= img.sum()
+    i_avg=  float(i_sum) /(width*height)
     
+    print('i_sum=%.4f' % i_sum)
+    print('i_avg=%.4f' % i_avg)
+    return   i_avg     
+
+def kmeans(image, segments=8):
+       #Preprocessing step
+       image=cv2.GaussianBlur(image,(7,7),0)
+       vectorized=image.reshape(-1,3)
+       vectorized=np.float32(vectorized)
+       criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,10, 1.0)
+       ret,label,center=cv2.kmeans(vectorized,segments,criteria,5,cv2.KMEANS_RANDOM_CENTERS)
+       
+       center = np.uint8(center)
+       res = center[label.flatten()]
+       segmented_image = res.reshape((image.shape))
+       
+       segmented_image=segmented_image
+       return label.reshape((image.shape[0],image.shape[1])), segmented_image.astype(np.uint8)
 
 def ContrastCorrection(img, correction):
 

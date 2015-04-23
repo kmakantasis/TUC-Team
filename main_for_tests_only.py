@@ -75,8 +75,11 @@ for i in range(1):#range(names.shape[0]):
     #RetSeg.DetectFlow_1(g) 
     #img2 =  cv2.imread(img_name)
     
-    hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+
     
+    ''' 
+    #---------HUE processing Example--------
+    hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     ImU.AverageHue(hsv_img)
     d_theta= 360. / 8
     for theta in np.arange(0, 360,d_theta/2):
@@ -85,8 +88,15 @@ for i in range(1):#range(names.shape[0]):
         orange_mask = cv2.inRange(hsv_img, ORANGE_MIN, ORANGE_MAX)
         ImU.PrintImg(orange_mask,'orange_mask')
         print('d_theta=%d' % theta)
-
- 
+    '''
+    '''
+    #-------------kmeans example---------------
+    labels,kmenas_out=ImU.kmeans(img)
+    ImU.PrintImgColor(kmenas_out,'kmenas_out')
+    '''
+    
+    #labels,g_kmenas_out=ImU.kmeans(g)
+    #ImU.PrintImg(g_kmenas_out,'g_kmenas_out')
     
     #total_mask=Msk.TotalMask(g)
    #vessels_mask= RetSeg.DetectVessels(g,Msk.TotalMask(g), silence=False )
